@@ -46,8 +46,6 @@ let tile=30, cols=20, rows=16;
 let maze;
 let score=0, level=1, lives=3;
 let target={x:1,y:1}, render={x:1,y:1};
-let enemies=[];
-let enemyActive=false;
 
 const canvas=document.getElementById('game');
 canvas.width=cols*tile;
@@ -73,6 +71,7 @@ const answers=document.getElementById('answers');
 
 function generate(){
   let m=Array.from({length:rows},()=>Array(cols).fill(0));
+
   function carve(x,y){
     let dirs=[[2,0],[-2,0],[0,2],[0,-2]].sort(()=>Math.random()-0.5);
     for(let [dx,dy] of dirs){
@@ -84,61 +83,14 @@ function generate(){
       }
     }
   }
+
   m[1][1]=1;
   carve(1,1);
+
   let ex=cols-2,ey=rows-2;
   m[ey][ex]=4;
+
   return m;
-}
-
-function safeSpawn(){
-  let list=[];
-  for(let y=1;y<rows-1;y++)for(let x=1;x<cols-1;x++){
-    if(maze[y][x]===1 && !(x===1&&y===1)) list.push({x,y});
-  }
-  enemies=[];
-  for(let i=0;i<3;i++){
-    enemies.push(list[Math.floor(Math.random()*list.length)]);
-  }
-}
-
-function initEnemies(){
-  safeSpawn();
-  enemyActive=false;
-  setTimeout(()=>enemyActive=true,800);
-}
-
-function updateEnemies(){
-  if(!enemyActive) return;
-
-  for(let e of enemies){
-    let dx=target.x-e.x;
-    let dy=target.y-e.y;
-    let moved=false;
-
-    if(Math.abs(dx)>Math.abs(dy)){
-      if(dx!==0 && maze[e.y]?.[e.x+Math.sign(dx)]!==0){e.x+=Math.sign(dx); moved=true;}
-      if(!moved && dy!==0 && maze[e.y+Math.sign(dy)]?.[e.x]!==0){e.y+=Math.sign(dy); moved=true;}
-    } else {
-      if(dy!==0 && maze[e.y+Math.sign(dy)]?.[e.x]!==0){e.y+=Math.sign(dy); moved=true;}
-      if(!moved && dx!==0 && maze[e.y]?.[e.x+Math.sign(dx)]!==0){e.x+=Math.sign(dx); moved=true;}
-    }
-
-    if(!moved){
-      let dirs=[[1,0],[-1,0],[0,1],[0,-1]].sort(()=>Math.random()-0.5);
-      for(let [ax,ay] of dirs){
-        if(maze[e.y+ay]?.[e.x+ax]!==0){e.x+=ax;e.y+=ay;break;}
-      }
-    }
-
-    if(e.x===target.x&&e.y===target.y){
-      lives--;
-      updateUI();
-      target={x:1,y:1};
-      render={x:1,y:1};
-      if(lives<=0){alert("Game Over");newGame();}
-    }
-  }
 }
 
 function draw(){
@@ -147,17 +99,12 @@ function draw(){
   render.x+=(target.x-render.x)*0.25;
   render.y+=(target.y-render.y)*0.25;
 
-  updateEnemies();
-
   ctx.clearRect(0,0,canvas.width,canvas.height);
 
   for(let y=0;y<rows;y++)for(let x=0;x<cols;x++){
     ctx.fillStyle=maze[y][x]===0?"#000":maze[y][x]===4?"#0f0":"#444";
     ctx.fillRect(x*tile,y*tile,tile,tile);
   }
-
-  ctx.fillStyle="red";
-  enemies.forEach(e=>ctx.fillRect(e.x*tile,e.y*tile,tile,tile));
 
   ctx.fillStyle="cyan";
   ctx.fillRect(render.x*tile,render.y*tile,tile,tile);
@@ -182,7 +129,6 @@ function newGame(){
   target={x:1,y:1};render={x:1,y:1};
   score=0;lives=3;
   updateUI();
-  initEnemies();
 }
 
 function startGame(){
