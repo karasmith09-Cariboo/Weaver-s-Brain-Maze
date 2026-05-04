@@ -14,8 +14,6 @@ button{padding:10px;margin:5px;border:0;border-radius:8px;cursor:pointer}
 .primary{background:#22c55e;font-weight:bold}
 #questionBox{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.7);z-index:20}
 #qCard{background:white;color:black;padding:18px;border-radius:12px;width:320px}
-
-/* HOW I BUILT MODAL */
 #infoLink{position:fixed;bottom:10px;width:100%;text-align:center;font-size:14px;color:#93c5fd;cursor:pointer;z-index:50}
 #infoModal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.85);z-index:100}
 #infoCard{background:#111827;color:#e5e7eb;padding:20px;border-radius:12px;width:80%;max-width:500px;text-align:left}
@@ -46,18 +44,14 @@ button{padding:10px;margin:5px;border:0;border-radius:8px;cursor:pointer}
   </div>
 </div>
 
-<!-- HOW I BUILT THIS LINK -->
 <div id="infoLink" onclick="openInfo()">📘 Read How I Built This</div>
 
-<!-- MODAL -->
 <div id="infoModal">
   <div id="infoCard">
     <h2>How I Built This</h2>
-    <p>This maze game was built using HTML, CSS, and JavaScript.</p>
-    <p>The maze is generated using a randomized depth-first search algorithm that carves paths.</p>
-    <p>Doors are placed on random path tiles and require answering vocabulary questions correctly to unlock.</p>
-    <p>The player is rendered on a grid canvas and moves tile-by-tile using keyboard controls.</p>
-    <p>Each level generates a new maze and places an exit in the bottom-right corner.</p>
+    <p>Maze generated using randomized depth-first search.</p>
+    <p>Doors require answering coding vocabulary questions.</p>
+    <p>Exit is always placed at the bottom-right of the maze.</p>
     <button onclick="closeInfo()">Close</button>
   </div>
 </div>
@@ -66,7 +60,7 @@ button{padding:10px;margin:5px;border:0;border-radius:8px;cursor:pointer}
 let tile=30, cols=20, rows=16;
 let maze;
 let score=0, level=1, lives=3;
-let target={x:1,y:1}, render={x:1,y:1};
+let player={x:1,y:1}, view={x:1,y:1};
 
 const canvas=document.getElementById('game');
 canvas.width=cols*tile;
@@ -97,28 +91,28 @@ const questions=[
 {q:"The category of data a value belongs to.",a:["Data Type","List","Boolean"],c:0},
 {q:"A numeric data type used for math calculations.",a:["Number","String","Boolean"],c:0},
 {q:"A sequence of characters used to represent text.",a:["String","Number","Boolean"],c:0},
-{q:"A data type with only true or false values.",a:["Boolean","Value","Variable"],c:0},
+{q:"A data type with only true/false values.",a:["Boolean","Value","Variable"],c:0},
 {q:"A named container that stores a value.",a:["Variable","List","Index"],c:0},
-{q:"The = symbol used to assign values.",a:["Assignment Operator","Comparison Operators","Logical Operators"],c:0},
+{q:"The = symbol used for assignment.",a:["Assignment Operator","Comparison Operators","Logical Operators"],c:0},
 {q:"Giving a variable a value.",a:["Variable Assignment","Function Call","Event"],c:0},
 {q:"An ordered collection of values.",a:["List","Element","String"],c:0},
 {q:"A value inside a list.",a:["Element","Index","Variable"],c:0},
 {q:"Position in a list starting at 0.",a:["Index","Number","Element"],c:0},
 {q:"A combination of values and operators.",a:["Expression","Condition","Comment"],c:0},
-{q:"Symbols that perform math on numbers.",a:["Arithmetic Operators","Logical Operators","Comparison Operators"],c:0},
+{q:"Math symbols for numbers.",a:["Arithmetic Operators","Logical Operators","Comparison Operators"],c:0},
 {q:"Remainder after division.",a:["% (Modulus)","Addition","Multiplication"],c:0},
-{q:"Symbols that compare values true/false.",a:["Comparison Operators","Arithmetic Operators","List"],c:0},
-{q:"Symbols that combine boolean values.",a:["Logical Operators","String","Number"],c:0},
+{q:"Symbols that compare values.",a:["Comparison Operators","Arithmetic Operators","List"],c:0},
+{q:"Symbols that combine booleans.",a:["Logical Operators","String","Number"],c:0},
 {q:"Joining strings together.",a:["Concatenation","Index","Function"],c:0},
-{q:"True/false question controlling code.",a:["Condition","Variable","String"],c:0},
+{q:"True/false control question.",a:["Condition","Variable","String"],c:0},
 {q:"Code that runs based on condition.",a:["Conditional Statement","Loop","Event"],c:0},
 {q:"Updating a value repeatedly.",a:["Counter Pattern","List","Variable Assignment"],c:0},
 {q:"Reusable block of code.",a:["Function","Function Call","Event"],c:0},
 {q:"Command that runs a function.",a:["Function Call","Function","Index"],c:0},
 {q:"An action that triggers code.",a:["Event","Action","Variable"],c:0},
 {q:"Code that waits for an event.",a:["Event Handler","Function","String"],c:0},
-{q:"What the program does in response.",a:["Action","Condition","List"],c:0},
-{q:"A note ignored by the program.",a:["Comment","Variable","Number"],c:0},
+{q:"Program response to an event.",a:["Action","Condition","List"],c:0},
+{q:"A note ignored by program.",a:["Comment","Variable","Number"],c:0},
 {q:"Finding and fixing errors.",a:["Debugging","String","Value"],c:0}
 ];
 
@@ -140,10 +134,11 @@ function generate(){
   m[1][1]=1;
   carve(1,1);
 
+  // ensure exit is on maze
   let ex=cols-2,ey=rows-2;
   m[ey][ex]=1;
-  // ensure exit is carved as reachable path then mark exit
 
+  // place doors
   for(let i=0;i<25;i++){
     let x=Math.floor(Math.random()*cols);
     let y=Math.floor(Math.random()*rows);
@@ -152,12 +147,13 @@ function generate(){
     }
   }
 
+  // mark exit
+  m[ey][ex]=4;
   return m;
 }
 
 function askDoor(x,y){
   let q=questions[Math.floor(Math.random()*questions.length)];
-
   questionBox.style.display="flex";
   questionText.textContent=q.q;
   answers.innerHTML="";
@@ -168,7 +164,7 @@ function askDoor(x,y){
     b.onclick=()=>{
       if(i===q.c){
         maze[y][x]=1;
-        target={x,y};
+        player={x,y};
         score+=10;
       }
       questionBox.style.display="none";
@@ -181,8 +177,8 @@ function askDoor(x,y){
 function draw(){
   if(!maze){requestAnimationFrame(draw);return;}
 
-  render.x+=(target.x-render.x)*0.25;
-  render.y+=(target.y-render.y)*0.25;
+  view.x+=(player.x-view.x)*0.2;
+  view.y+=(player.y-view.y)*0.2;
 
   ctx.clearRect(0,0,canvas.width,canvas.height);
 
@@ -193,19 +189,19 @@ function draw(){
   }
 
   ctx.fillStyle="cyan";
-  ctx.fillRect(render.x*tile,render.y*tile,tile,tile);
+  ctx.fillRect(view.x*tile,view.y*tile,tile,tile);
 
   requestAnimationFrame(draw);
 }
 
 function move(dx,dy){
-  let nx=target.x+dx,ny=target.y+dy;
+  let nx=player.x+dx,ny=player.y+dy;
   let t=maze[ny]?.[nx];
   if(t===0||t==null) return;
 
   if(t===2){askDoor(nx,ny);return;}
 
-  target={x:nx,y:ny};
+  player={x:nx,y:ny};
 
   if(t===4){
     level++;updateUI();alert("Level Complete!");newGame();
@@ -214,7 +210,7 @@ function move(dx,dy){
 
 function newGame(){
   maze=generate();
-  target={x:1,y:1};render={x:1,y:1};
+  player={x:1,y:1};view={x:1,y:1};
   score=0;lives=3;
   updateUI();
 }
@@ -225,18 +221,10 @@ function startGame(){
   newGame();
 }
 
-function openInfo(){
-  document.getElementById('infoModal').style.display='flex';
-}
-function closeInfo(){
-  document.getElementById('infoModal').style.display='none';
-}
+function openInfo(){document.getElementById('infoModal').style.display='flex';}
+function closeInfo(){document.getElementById('infoModal').style.display='none';}
 
-function init(){
-  playBtn.addEventListener('click',startGame);
-}
-
-init();
+playBtn.addEventListener('click',startGame);
 requestAnimationFrame(draw);
 </script>
 </body>
