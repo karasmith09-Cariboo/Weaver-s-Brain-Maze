@@ -46,33 +46,29 @@ button{padding:10px;margin:5px;border:0;border-radius:8px;cursor:pointer}
 // ===== CONFIG =====
 let tile=30, cols=20, rows=16;
 let maze;
+let lives=3;
 let target={x:1,y:1}, render={x:1,y:1};
+let enemies=[];
 
-// canvas sized correctly
 const canvas=document.getElementById('game');
 canvas.width=cols*tile;
 canvas.height=rows*tile;
 const ctx=canvas.getContext('2d');
 
-// ===== AUDIO FIX (UNLOCK ON CLICK) =====
+// ===== AUDIO =====
 let soundOn=true;
-
 const bgMusic=new Audio("https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8a2b3b8f1.mp3?filename=arcade-music-loop-110997.mp3");
-bgMusic.loop=true;
-bgMusic.volume=0.3;
+bgMusic.loop=true;bgMusic.volume=0.3;
 
-const sfxMove=new Audio("https://cdn.pixabay.com/download/audio/2022/03/15/audio_5c8e4d7c1a.mp3?filename=click-124467.mp3");
-const sfxCorrect=new Audio("https://cdn.pixabay.com/download/audio/2022/03/15/audio_7a8b1e4c0a.mp3?filename=success-1-6297.mp3");
-const sfxWrong=new Audio("https://cdn.pixabay.com/download/audio/2022/03/15/audio_3a9f7c2b3d.mp3?filename=error-126627.mp3");
-const sfxWin=new Audio("https://cdn.pixabay.com/download/audio/2022/03/15/audio_0b2d3c4e5f.mp3?filename=win-6297.mp3");
+const sfxMove=new Audio("https://cdn.pixabay.com/download/audio/2022/03/15/audio_5c8e4d7c1a.mp3");
+const sfxCorrect=new Audio("https://cdn.pixabay.com/download/audio/2022/03/15/audio_7a8b1e4c0a.mp3");
+const sfxWrong=new Audio("https://cdn.pixabay.com/download/audio/2022/03/15/audio_3a9f7c2b3d.mp3");
+const sfxWin=new Audio("https://cdn.pixabay.com/download/audio/2022/03/15/audio_0b2d3c4e5f.mp3");
 
-[sfxMove,sfxCorrect,sfxWrong,sfxWin,bgMusic].forEach(a=>a.volume=0.6);
-
-function unlockAudio(){
-  bgMusic.play().then(()=>bgMusic.pause()).catch(()=>{});
-}
+[sfxMove,sfxCorrect,sfxWrong,sfxWin].forEach(a=>a.volume=0.6);
 
 function play(a){if(!soundOn)return;a.currentTime=0;a.play().catch(()=>{});}
+function unlockAudio(){bgMusic.play().then(()=>bgMusic.pause()).catch(()=>{});}
 function startMusic(){if(soundOn){bgMusic.currentTime=0;bgMusic.play().catch(()=>{});}}
 
 // ===== QUESTIONS =====
@@ -81,37 +77,37 @@ const questionText=document.getElementById('questionText');
 const answers=document.getElementById('answers');
 
 let questions=[
-  {q:"Algorithm means?",a:["Step-by-step instructions","Value","String"],c:0},
+  {q:"Algorithm means?",a:["Step-by-step set of instructions","Value","String"],c:0},
   {q:"Value means?",a:["A specific piece of data","Algorithm","Boolean"],c:0},
   {q:"Data Type means?",a:["Category of data","Function","Loop"],c:0},
   {q:"Number is?",a:["Numeric data type","String","List"],c:0},
   {q:"String is?",a:["Sequence of characters","Number","Boolean"],c:0},
-  {q:"Boolean is?",a:["True/False type","Text","Number"],c:0},
-  {q:"Variable is?",a:["Named container","Function","List"],c:0},
-  {q:"Assignment Operator means?",a:["= stores value","== compare","+ add"],c:0},
-  {q:"Variable Assignment is?",a:["Giving value","Deleting","Printing"],c:0},
-  {q:"List is?",a:["Ordered collection","Single value","Condition"],c:0},
-  {q:"Element is?",a:["Value in list","List name","Index"],c:0},
-  {q:"Index is?",a:["Position starting 0","Value","Operator"],c:0},
-  {q:"Expression is?",a:["Produces result","Loop","Event"],c:0},
-  {q:"Arithmetic Operators are?",a:["Math symbols","Compare","Text"],c:0},
-  {q:"Modulus (%) means?",a:["Remainder","Add","Multiply"],c:0},
-  {q:"Comparison Operators are?",a:["Compare values","Assign","Loop"],c:0},
-  {q:"Logical Operators are?",a:["Boolean logic","Math","Text"],c:0},
-  {q:"Concatenation is?",a:["Join strings","Split","Count"],c:0},
-  {q:"Condition is?",a:["True/false test","Function","List"],c:0},
-  {q:"Conditional Statement is?",a:["If logic","Loop","Variable"],c:0},
-  {q:"Counter Pattern is?",a:["Incrementing variable","Deleting","Sorting"],c:0},
-  {q:"Function is?",a:["Reusable block","Variable","Event"],c:0},
-  {q:"Function Call is?",a:["Run function","Define","Loop"],c:0},
-  {q:"Event is?",a:["Action trigger","Data","Variable"],c:0},
-  {q:"Event Handler is?",a:["Wait for event","Number","String"],c:0},
-  {q:"Action is?",a:["Program response","Variable","List"],c:0},
-  {q:"Comment is?",a:["Ignored note","Code","Function"],c:0},
-  {q:"Debugging is?",a:["Fixing errors","Writing","Deleting"],c:0}
+  {q:"Boolean is?",a:["True/False data type","Text","Number"],c:0},
+  {q:"Variable is?",a:["Named container for data","Function","List"],c:0},
+  {q:"Assignment Operator means?",a:["= stores a value","== compares values","+ adds numbers"],c:0},
+  {q:"Variable Assignment is?",a:["Giving a variable a value","Deleting a variable","Printing output"],c:0},
+  {q:"List is?",a:["Ordered collection of values","Single value","Condition"],c:0},
+  {q:"Element is?",a:["Single value in a list","List name","Index"],c:0},
+  {q:"Index is?",a:["Position starting at 0","Value","Operator"],c:0},
+  {q:"Expression is?",a:["Combination of values and operators","Loop","Event"],c:0},
+  {q:"Arithmetic Operators are?",a:["Math symbols like + - * /","Comparison symbols","Text"],c:0},
+  {q:"Modulus (%) means?",a:["Remainder after division","Addition","Multiplication"],c:0},
+  {q:"Comparison Operators are?",a:["Compare two values","Assign values","Create loops"],c:0},
+  {q:"Logical Operators are?",a:["Combine boolean values","Math operations","Strings"],c:0},
+  {q:"Concatenation is?",a:["Joining strings together","Splitting strings","Counting values"],c:0},
+  {q:"Condition is?",a:["True/false question","Function","List"],c:0},
+  {q:"Conditional Statement is?",a:["Code that runs based on a condition","Loop","Variable"],c:0},
+  {q:"Counter Pattern is?",a:["Incrementing a variable","Deleting a variable","Sorting data"],c:0},
+  {q:"Function is?",a:["Reusable block of code","Variable","Event"],c:0},
+  {q:"Function Call is?",a:["Executing a function","Defining a function","Loop"],c:0},
+  {q:"Event is?",a:["An action that triggers code","Data type","Variable"],c:0},
+  {q:"Event Handler is?",a:["Code that waits for an event","Number","String"],c:0},
+  {q:"Action is?",a:["Program response to an event","Variable","List"],c:0},
+  {q:"Comment is?",a:["Ignored note in code","Executable code","Function"],c:0},
+  {q:"Debugging is?",a:["Finding and fixing errors","Writing code","Deleting code"],c:0}
 ];
 
-// ===== MAZE (EXIT FIXED INSIDE GRID) =====
+// ===== MAZE =====
 function generate(){
   let m=Array.from({length:rows},()=>Array(cols).fill(0));
 
@@ -127,24 +123,82 @@ function generate(){
     }
   }
 
+  // build maze
   m[1][1]=1;
   carve(1,1);
 
-  let ex=cols-2, ey=rows-2;
+  let ex=cols-2,ey=rows-2;
 
-  // guarantee path
-  for(let x=1;x<=ex;x++) m[1][x]=1;
-  for(let y=1;y<=ey;y++) m[y][ex]=1;
+  // ensure exit cell is open
+  m[ey][ex]=1;
 
-  // doors
-  for(let i=0;i<12;i++){
+  // add doors only on valid path cells
+  for(let i=0;i<18;i++){
     let x=Math.floor(Math.random()*cols);
     let y=Math.floor(Math.random()*rows);
-    if(m[y][x]===1 && !(x===1&&y===1) && !(x===ex&&y===ey)) m[y][x]=2;
+    if(m[y][x]===1 && !(x===1&&y===1) && !(x===ex&&y===ey)){
+      m[y][x]=2;
+    }
   }
 
-  m[ey][ex]=4; // EXIT ALWAYS INSIDE GRID
+  // ---- PATH VALIDATION (FIX BROKEN MAZE) ----
+  function bfs(){
+    let q=[[1,1]];
+    let seen=new Set(["1,1"]);
+
+    while(q.length){
+      let [x,y]=q.shift();
+      let dirs=[[1,0],[-1,0],[0,1],[0,-1]];
+      for(let [dx,dy] of dirs){
+        let nx=x+dx,ny=y+dy;
+        let key=nx+","+ny;
+        if(nx>=0&&ny>=0&&nx<cols&&ny<rows && !seen.has(key) && m[ny][nx]!==0){
+          seen.add(key);
+          q.push([nx,ny]);
+        }
+      }
+    }
+    return seen.has(ex+","+ey);
+  }
+
+  // repair path if exit unreachable
+  if(!bfs()){
+    let x=1,y=1;
+    while(x<ex){ if(m[y][x]===0) m[y][x]=1; x++; }
+    while(y<ey){ if(m[y][ex]===0) m[y][ex]=1; y++; }
+  }
+
+  m[ey][ex]=4;
   return m;
+}
+}
+
+// ===== ENEMIES =====
+function initEnemies(){
+  enemies=[];
+  for(let i=0;i<4;i++){
+    enemies.push({
+      x:Math.floor(Math.random()*cols),
+      y:Math.floor(Math.random()*rows),
+      dx:Math.random()<0.5?1:-1,
+      dy:0
+    });
+  }
+}
+
+function updateEnemies(){
+  for(let e of enemies){
+    let nx=e.x+e.dx;
+    if(maze[e.y]?.[nx]===0 || nx<0 || nx>=cols){e.dx*=-1;}
+    else e.x=nx;
+
+    if(e.x===target.x && e.y===target.y){
+      lives--;
+      target={x:1,y:1};
+      render={x:1,y:1};
+      if(lives<=0){alert("Game Over");newGame();}
+    }
+  }
 }
 
 // ===== GAME =====
@@ -171,11 +225,19 @@ function draw(){
   render.x+=(target.x-render.x)*0.25;
   render.y+=(target.y-render.y)*0.25;
 
+  updateEnemies();
+
   ctx.clearRect(0,0,canvas.width,canvas.height);
 
   for(let y=0;y<rows;y++)for(let x=0;x<cols;x++){
     ctx.fillStyle=maze[y][x]===0?"#000":maze[y][x]===4?"#00ff00":maze[y][x]===2?"orange":"#444";
     ctx.fillRect(x*tile,y*tile,tile,tile);
+  }
+
+  // draw enemies
+  ctx.fillStyle="red";
+  for(let e of enemies){
+    ctx.fillRect(e.x*tile,e.y*tile,tile,tile);
   }
 
   ctx.fillStyle="cyan";
@@ -201,6 +263,8 @@ function newGame(){
   maze=generate();
   target={x:1,y:1};
   render={x:1,y:1};
+  lives=3;
+  initEnemies();
 }
 
 function startGame(){
