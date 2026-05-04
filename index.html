@@ -99,9 +99,18 @@ function generate(){
   m[1][1]=1;
   carve(1,1);
 
-  // exit
-  let ex=cols-2,ey=rows-2;
-  m[ey][ex]=1;
+  // collect path tiles for valid exit placement
+  let candidates=[];
+  for(let y=1;y<rows-1;y++){
+    for(let x=1;x<cols-1;x++){
+      if(m[y][x]===1 && !(x===1&&y===1)){
+        candidates.push({x,y});
+      }
+    }
+  }
+
+  let pick=candidates[Math.floor(Math.random()*candidates.length)] || {x:cols-2,y:rows-2};
+  let ex=pick.x, ey=pick.y;
 
   // doors
   for(let i=0;i<20;i++){
@@ -112,8 +121,14 @@ function generate(){
     }
   }
 
+  // ensure exit is on path
+  m[ey][ex]=1;
+
+  // mark exit
   m[ey][ex]=4;
+
   return m;
+}
 }
 
 function ask(x,y){
