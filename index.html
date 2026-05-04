@@ -51,7 +51,7 @@ button{padding:10px;margin:5px;border:0;border-radius:8px;cursor:pointer}
     <h2>How I Built This</h2>
     <p>Maze generated using randomized depth-first search.</p>
     <p>Doors require answering coding vocabulary questions.</p>
-    <p>Exit is always placed at the bottom-right of the maze.</p>
+    <p>Exit is always placed on a reachable path tile.</p>
     <button onclick="closeInfo()">Close</button>
   </div>
 </div>
@@ -131,48 +131,34 @@ function generate(){
     }
   }
 
-  // carve maze
   m[1][1]=1;
   carve(1,1);
 
-  // collect path tiles
   let candidates=[];
   for(let y=1;y<rows-1;y++){
     for(let x=1;x<cols-1;x++){
-      if(m[y][x]===1 && !(x===1&&y===1)){
-        candidates.push({x,y});
-      }
+      if(m[y][x]===1 && !(x===1&&y===1)) candidates.push({x,y});
     }
   }
 
-  let pick=candidates[Math.floor(Math.random()*candidates.length)];
-  if(!pick) pick={x:cols-2,y:rows-2};
-
+  let pick=candidates[Math.floor(Math.random()*candidates.length)]||{x:cols-2,y:rows-2};
   let ex=pick.x, ey=pick.y;
 
-  // place doors
   for(let i=0;i<25;i++){
     let x=Math.floor(Math.random()*cols);
     let y=Math.floor(Math.random()*rows);
-    if(m[y][x]===1 && !(x===1&&y===1) && !(x===ex&&y===ey)){
-      m[y][x]=2;
-    }
+    if(m[y][x]===1 && !(x===1&&y===1) && !(x===ex&&y===ey)) m[y][x]=2;
   }
 
-  // ensure exit is reachable by clearing neighbors
-  const dirs=[[1,0],[-1,0],[0,1],[0,-1]];
-  for(let [dx,dy] of dirs){
-    let nx=ex+dx, ny=ey+dy;
-    if(nx>0&&ny>0&&nx<cols-1&&ny<rows-1 && m[ny][nx]===0){
-      m[ny][nx]=1;
-    }
+  const dirs4=[[1,0],[-1,0],[0,1],[0,-1]];
+  for(let [dx,dy] of dirs4){
+    let nx=ex+dx,ny=ey+dy;
+    if(nx>0&&ny>0&&nx<cols-1&&ny<rows-1) m[ny][nx]=1;
   }
 
-  // mark exit
   m[ey][ex]=4;
 
   return m;
-}
 }
 
 function askDoor(x,y){
@@ -185,11 +171,7 @@ function askDoor(x,y){
     let b=document.createElement("button");
     b.textContent=ans;
     b.onclick=()=>{
-      if(i===q.c){
-        maze[y][x]=1;
-        player={x,y};
-        score+=10;
-      }
+      if(i===q.c){maze[y][x]=1;player={x,y};score+=10;}
       questionBox.style.display="none";
       updateUI();
     };
@@ -226,9 +208,7 @@ function move(dx,dy){
 
   player={x:nx,y:ny};
 
-  if(t===4){
-    level++;updateUI();alert("Level Complete!");newGame();
-  }
+  if(t===4){level++;updateUI();alert("Level Complete!");newGame();}
 }
 
 function newGame(){
@@ -246,6 +226,15 @@ function startGame(){
 
 function openInfo(){document.getElementById('infoModal').style.display='flex';}
 function closeInfo(){document.getElementById('infoModal').style.display='none';}
+
+// FIX: movement controls restored
+addEventListener('keydown',(e)=>{
+  if(questionBox.style.display==='flex') return;
+  if(e.key==='ArrowUp'||e.key==='w') move(0,-1);
+  if(e.key==='ArrowDown'||e.key==='s') move(0,1);
+  if(e.key==='ArrowLeft'||e.key==='a') move(-1,0);
+  if(e.key==='ArrowRight'||e.key==='d') move(1,0);
+});
 
 playBtn.addEventListener('click',startGame);
 requestAnimationFrame(draw);
