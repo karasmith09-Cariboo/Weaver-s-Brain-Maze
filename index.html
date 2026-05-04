@@ -47,6 +47,7 @@ let maze;
 let score=0, level=1, lives=3;
 let target={x:1,y:1}, render={x:1,y:1};
 let enemies=[];
+let enemyActive=false;
 
 const canvas=document.getElementById('game');
 canvas.width=cols*tile;
@@ -66,53 +67,9 @@ function updateUI(){
   livesEl.textContent=lives;
 }
 
-let soundOn=true;
-const bgMusic=new Audio("https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8a2b3b8f1.mp3");
-bgMusic.loop=true;
-
-const sfxMove=new Audio("https://cdn.pixabay.com/download/audio/2022/03/15/audio_5c8e4d7c1a.mp3");
-const sfxCorrect=new Audio("https://cdn.pixabay.com/download/audio/2022/03/15/audio_7a8b1e4c0a.mp3");
-const sfxWrong=new Audio("https://cdn.pixabay.com/download/audio/2022/03/15/audio_3a9f7c2b3d.mp3");
-const sfxWin=new Audio("https://cdn.pixabay.com/download/audio/2022/03/15/audio_0b2d3c4e5f.mp3");
-
-function play(a){if(!soundOn)return;a.currentTime=0;a.play().catch(()=>{});}
-function unlockAudio(){bgMusic.play().then(()=>bgMusic.pause()).catch(()=>{});}
-function startMusic(){if(soundOn)bgMusic.play().catch(()=>{});}
-
 const questionBox=document.getElementById('questionBox');
 const questionText=document.getElementById('questionText');
 const answers=document.getElementById('answers');
-
-let questions=[
-{q:"A step-by-step set of instructions for solving a problem.",a:["Algorithm","Value","String"],c:0},
-{q:"A specific piece of data a program stores or uses.",a:["Value","Variable","Number"],c:0},
-{q:"The category of data a value belongs to.",a:["Data Type","List","Boolean"],c:0},
-{q:"A numeric data type used for math calculations.",a:["Number","String","Boolean"],c:0},
-{q:"A sequence of characters used to represent text.",a:["String","Number","Boolean"],c:0},
-{q:"A data type with only two values true or false.",a:["Boolean","Value","Variable"],c:0},
-{q:"A named container that stores a value.",a:["Variable","List","Index"],c:0},
-{q:"The = symbol used to assign values.",a:["Assignment Operator","Comparison Operators","Logical Operators"],c:0},
-{q:"Giving a variable a value.",a:["Variable Assignment","Function Call","Event"],c:0},
-{q:"An ordered collection of values.",a:["List","Element","String"],c:0},
-{q:"A value inside a list.",a:["Element","Index","Variable"],c:0},
-{q:"Position in a list starting at 0.",a:["Index","Number","Element"],c:0},
-{q:"Math expression result.",a:["Expression","Condition","Comment"],c:0},
-{q:"Math symbols.",a:["Arithmetic Operators","Logical Operators","Comparison Operators"],c:0},
-{q:"Remainder after division.",a:["% (Modulus)","Addition","Multiplication"],c:0},
-{q:"Compare values true/false.",a:["Comparison Operators","Arithmetic Operators","List"],c:0},
-{q:"Boolean logic symbols.",a:["Logical Operators","String","Number"],c:0},
-{q:"Joining strings.",a:["Concatenation","Index","Function"],c:0},
-{q:"True/false control question.",a:["Condition","Variable","String"],c:0},
-{q:"Runs different code based on condition.",a:["Conditional Statement","Loop","Event"],c:0},
-{q:"Counting pattern.",a:["Counter Pattern","List","Variable Assignment"],c:0},
-{q:"Reusable block of code.",a:["Function","Function Call","Event"],c:0},
-{q:"Runs a function.",a:["Function Call","Function","Index"],c:0},
-{q:"Triggers code.",a:["Event","Action","Variable"],c:0},
-{q:"Waits for event.",a:["Event Handler","Function","String"],c:0},
-{q:"Program response.",a:["Action","Condition","List"],c:0},
-{q:"Note in code.",a:["Comment","Variable","Number"],c:0},
-{q:"Fixing errors.",a:["Debugging","String","Value"],c:0}
-];
 
 function generate(){
   let m=Array.from({length:rows},()=>Array(cols).fill(0));
@@ -131,24 +88,34 @@ function generate(){
   carve(1,1);
   let ex=cols-2,ey=rows-2;
   m[ey][ex]=4;
-  for(let i=0;i<25;i++){
-    let x=Math.floor(Math.random()*cols);
-    let y=Math.floor(Math.random()*rows);
-    if(m[y][x]===1 && !(x===1&&y===1) && !(x===ex&&y===ey)) m[y][x]=2;
-  }
   return m;
 }
 
-function initEnemies(){
+function safeSpawn(){
+  let list=[];
+  for(let y=1;y<rows-1;y++)for(let x=1;x<cols-1;x++){
+    if(maze[y][x]===1 && !(x===1&&y===1)) list.push({x,y});
+  }
   enemies=[];
-  for(let i=0;i<3;i++) enemies.push({x:2+i,y:2});
+  for(let i=0;i<3;i++){
+    enemies.push(list[Math.floor(Math.random()*list.length)]);
+  }
+}
+
+function initEnemies(){
+  safeSpawn();
+  enemyActive=false;
+  setTimeout(()=>enemyActive=true,800);
 }
 
 function updateEnemies(){
+  if(!enemyActive) return;
+
   for(let e of enemies){
     let dx=target.x-e.x;
     let dy=target.y-e.y;
     let moved=false;
+
     if(Math.abs(dx)>Math.abs(dy)){
       if(dx!==0 && maze[e.y]?.[e.x+Math.sign(dx)]!==0){e.x+=Math.sign(dx); moved=true;}
       if(!moved && dy!==0 && maze[e.y+Math.sign(dy)]?.[e.x]!==0){e.y+=Math.sign(dy); moved=true;}
@@ -156,14 +123,19 @@ function updateEnemies(){
       if(dy!==0 && maze[e.y+Math.sign(dy)]?.[e.x]!==0){e.y+=Math.sign(dy); moved=true;}
       if(!moved && dx!==0 && maze[e.y]?.[e.x+Math.sign(dx)]!==0){e.x+=Math.sign(dx); moved=true;}
     }
+
     if(!moved){
       let dirs=[[1,0],[-1,0],[0,1],[0,-1]].sort(()=>Math.random()-0.5);
       for(let [ax,ay] of dirs){
         if(maze[e.y+ay]?.[e.x+ax]!==0){e.x+=ax;e.y+=ay;break;}
       }
     }
+
     if(e.x===target.x&&e.y===target.y){
-      lives--;updateUI();target={x:1,y:1};render={x:1,y:1};
+      lives--;
+      updateUI();
+      target={x:1,y:1};
+      render={x:1,y:1};
       if(lives<=0){alert("Game Over");newGame();}
     }
   }
@@ -171,18 +143,25 @@ function updateEnemies(){
 
 function draw(){
   if(!maze){requestAnimationFrame(draw);return;}
+
   render.x+=(target.x-render.x)*0.25;
   render.y+=(target.y-render.y)*0.25;
+
   updateEnemies();
+
   ctx.clearRect(0,0,canvas.width,canvas.height);
+
   for(let y=0;y<rows;y++)for(let x=0;x<cols;x++){
-    ctx.fillStyle=maze[y][x]===0?"#000":maze[y][x]===4?"#0f0":maze[y][x]===2?"orange":"#444";
+    ctx.fillStyle=maze[y][x]===0?"#000":maze[y][x]===4?"#0f0":"#444";
     ctx.fillRect(x*tile,y*tile,tile,tile);
   }
+
   ctx.fillStyle="red";
   enemies.forEach(e=>ctx.fillRect(e.x*tile,e.y*tile,tile,tile));
+
   ctx.fillStyle="cyan";
   ctx.fillRect(render.x*tile,render.y*tile,tile,tile);
+
   requestAnimationFrame(draw);
 }
 
@@ -190,33 +169,27 @@ function move(dx,dy){
   let nx=target.x+dx,ny=target.y+dy;
   let t=maze[ny]?.[nx];
   if(t===0||t==null) return;
-  if(t===2){ask(nx,ny);return;}
-  target={x:nx,y:ny};play(sfxMove);
-  if(t===4){level++;updateUI();play(sfxWin);alert("Level Complete");newGame();}
+
+  target={x:nx,y:ny};
+
+  if(t===4){
+    level++;updateUI();alert("Level Complete");newGame();
+  }
 }
 
-function ask(x,y){
-  let q=questions[Math.floor(Math.random()*questions.length)];
-  questionBox.style.display="flex";
-  questionText.textContent=q.q;
-  answers.innerHTML="";
-  q.a.forEach((ans,i)=>{
-    let b=document.createElement("button");
-    b.textContent=ans;
-    b.onclick=()=>{
-      if(i===q.c){maze[y][x]=1;score+=10;play(sfxCorrect);}else{play(sfxWrong);}
-      updateUI();questionBox.style.display="none";
-    };
-    answers.appendChild(b);
-  });
+function newGame(){
+  maze=generate();
+  target={x:1,y:1};render={x:1,y:1};
+  score=0;lives=3;
+  updateUI();
+  initEnemies();
 }
 
-function newGame(){maze=generate();target={x:1,y:1};render={x:1,y:1};lives=3;score=0;updateUI();initEnemies();}
-
-function startGame(){unlockAudio();menu.style.display="none";wrap.style.display="flex";newGame();startMusic();}
-
-window.startGame=startGame;
-window.newGame=newGame;
+function startGame(){
+  menu.style.display="none";
+  wrap.style.display="flex";
+  newGame();
+}
 
 document.getElementById('playBtn').addEventListener('click',startGame);
 
