@@ -3,7 +3,285 @@
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta charset="UTF-8">
+<title>Weaver's Brain Maze+</title><!DOCTYPE html>
+<html lang="en">
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8">
 <title>Weaver's Brain Maze+</title>
+<style>
+body{margin:0;background:#0b1020;color:#e5e7eb;font-family:system-ui;text-align:center}
+#menu{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#0b1020;z-index:10}
+#wrap{display:none;justify-content:center;gap:16px;padding:10px}
+canvas{background:#000;border-radius:12px}
+.panel{background:#111827;padding:10px;border-radius:10px;min-width:140px}
+button{padding:10px;margin:5px;border:0;border-radius:8px;cursor:pointer}
+.primary{background:#22c55e;font-weight:bold}
+#questionBox{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.7);z-index:20}
+#qCard{background:white;color:black;padding:18px;border-radius:12px;width:300px}
+</style>
+</head>
+<body>
+
+<div id="menu">
+  <h1>🧠 Weaver's Brain Maze+</h1>
+  <h3>Created by Kara Smith</h3>
+  <button class="primary" onclick="startGame()">Play</button>
+</div>
+
+<div id="wrap">
+  <canvas id="game"></canvas>
+  <div class="panel">
+    <div>Level: <b id="level">1</b></div>
+    <div>Score: <b id="score">0</b></div>
+    <div>Lives: <b id="lives">3</b></div>
+    <button onclick="newGame()">Restart</button>
+  </div>
+</div>
+
+<div id="questionBox">
+  <div id="qCard">
+    <p id="questionText"></p>
+    <div id="answers"></div>
+  </div>
+</div>
+
+<script>
+let tile=30, cols=20, rows=16;
+let maze;
+let score=0;
+let level=1;
+let lives=3;
+
+let target={x:1,y:1}, render={x:1,y:1};
+let enemies=[];
+
+const canvas=document.getElementById('game');
+canvas.width=cols*tile;
+canvas.height=rows*tile;
+const ctx=canvas.getContext('2d');
+
+const menu=document.getElementById('menu');
+const wrap=document.getElementById('wrap');
+
+const levelEl=document.getElementById('level');
+const scoreEl=document.getElementById('score');
+const livesEl=document.getElementById('lives');
+
+function updateUI(){
+  levelEl.textContent=level;
+  scoreEl.textContent=score;
+  livesEl.textContent=lives;
+}
+
+let soundOn=true;
+const bgMusic=new Audio("https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8a2b3b8f1.mp3");
+bgMusic.loop=true;
+
+const sfxMove=new Audio("https://cdn.pixabay.com/download/audio/2022/03/15/audio_5c8e4d7c1a.mp3");
+const sfxCorrect=new Audio("https://cdn.pixabay.com/download/audio/2022/03/15/audio_7a8b1e4c0a.mp3");
+const sfxWrong=new Audio("https://cdn.pixabay.com/download/audio/2022/03/15/audio_3a9f7c2b3d.mp3");
+const sfxWin=new Audio("https://cdn.pixabay.com/download/audio/2022/03/15/audio_0b2d3c4e5f.mp3");
+
+function play(a){if(!soundOn)return;a.currentTime=0;a.play().catch(()=>{});}
+function unlockAudio(){bgMusic.play().then(()=>bgMusic.pause()).catch(()=>{});}
+function startMusic(){if(soundOn){bgMusic.play().catch(()=>{});}}
+
+const questionBox=document.getElementById('questionBox');
+const questionText=document.getElementById('questionText');
+const answers=document.getElementById('answers');
+
+let questions=[
+{q:"Algorithm - A step-by-step set of instructions for solving a problem.",a:["Algorithm","Value","String"],c:0},
+{q:"Value - A specific piece of data a program stores or uses.",a:["Value","Variable","String"],c:0},
+{q:"Data Type - The category of data a value belongs to.",a:["Data Type","List","Number"],c:0},
+{q:"Number - A numeric data type used for math calculations.",a:["Number","String","Boolean"],c:0},
+{q:"String - A sequence of characters used to represent text.",a:["String","Number","List"],c:0},
+{q:"Boolean - A data type with only two possible values: true or false.",a:["Boolean","Value","Variable"],c:0},
+{q:"Variable - A named container in memory that stores a value that can change.",a:["Variable","Constant","Index"],c:0},
+{q:"Assignment Operator - The = symbol that stores a value into a variable.",a:["Assignment Operator","Comparison Operator","Logical Operators"],c:0},
+{q:"Variable Assignment - Giving a variable a value.",a:["Variable Assignment","Function Call","Event"],c:0},
+{q:"List - An ordered collection of values stored under a single variable name.",a:["List","Element","String"],c:0},
+{q:"Element - A single value stored inside a list.",a:["Element","Index","Value"],c:0},
+{q:"Index - The position number used to access an element in a list, starting at 0.",a:["Index","Variable","Number"],c:0},
+{q:"Expression - A combination of values and operators that produces a single result.",a:["Expression","Condition","Comment"],c:0},
+{q:"Arithmetic Operators - Symbols that perform math on numbers.",a:["Arithmetic Operators","Logical Operators","String"],c:0},
+{q:"% (Modulus) - Returns the remainder left over after division.",a:["% (Modulus)","Addition","Comparison Operators"],c:0},
+{q:"Comparison Operators - Symbols that compare two values and return true or false.",a:["Comparison Operators","Arithmetic Operators","List"],c:0},
+{q:"Logical Operators - Symbols that combine or modify boolean values.",a:["Logical Operators","Number","Variable"],c:0},
+{q:"Concatenation - Joining two or more strings together into one.",a:["Concatenation","Index","Function"],c:0},
+{q:"Condition - A true or false question that controls what code runs.",a:["Condition","Value","String"],c:0},
+{q:"Conditional Statement - Code that runs different instructions depending on whether a condition is true.",a:["Conditional Statement","Loop","Event"],c:0},
+{q:"Counter Pattern - Updating a variable by adding to its own current value to count something.",a:["Counter Pattern","Variable Assignment","List"],c:0},
+{q:"Function - A named, reusable block of code that performs a specific task.",a:["Function","Function Call","Event"],c:0},
+{q:"Function Call - A command that executes a function.",a:["Function Call","Function","Index"],c:0},
+{q:"Event - An action that triggers code to run.",a:["Event","Action","Variable"],c:0},
+{q:"Event Handler - Code that waits for a specific event and runs when it occurs.",a:["Event Handler","Function","String"],c:0},
+{q:"Action - What the program does in response to an event.",a:["Action","Condition","List"],c:0},
+{q:"Comment - A note written in code that the program ignores, meant for humans to read.",a:["Comment","Variable","Number"],c:0},
+{q:"Debugging - The process of finding and fixing errors in code.",a:["Debugging","String","Value"],c:0}
+];
+
+function generate(){
+  let m=Array.from({length:rows},()=>Array(cols).fill(0));
+
+  function carve(x,y){
+    let dirs=[[2,0],[-2,0],[0,2],[0,-2]].sort(()=>Math.random()-0.5);
+    for(let [dx,dy] of dirs){
+      let nx=x+dx,ny=y+dy;
+      if(nx>0&&ny>0&&nx<cols-1&&ny<rows-1&&m[ny][nx]===0){
+        m[y+dy/2][x+dx/2]=1;
+        m[ny][nx]=1;
+        carve(nx,ny);
+      }
+    }
+  }
+
+  // start carving
+  m[1][1]=1;
+  carve(1,1);
+
+  let ex=cols-2,ey=rows-2;
+
+  // IMPORTANT: no forced straight corridor (makes game too easy)
+  // instead rely on maze connectivity
+
+  // ensure exit is placed on a valid path cell
+  m[ey][ex]=1;
+
+  // set exit
+  m[ey][ex]=4;
+
+  // increase obstacles for more difficulty
+  for(let i=0;i<25;i++){
+    let x=Math.floor(Math.random()*cols);
+    let y=Math.floor(Math.random()*rows);
+    if(m[y][x]===1 && !(x===1&&y===1) && !(x===ex&&y===ey)){
+      m[y][x]=2;
+    }
+  }
+
+  return m;
+}
+
+function initEnemies(){
+  enemies=[];
+  for(let i=0;i<3;i++) enemies.push({x:2+i,y:2,dx:1});
+}
+
+function updateEnemies(){
+  for(let e of enemies){
+    let nx=e.x+e.dx;
+    if(maze[e.y]?.[nx]===0){e.dx*=-1;} else e.x=nx;
+
+    if(e.x===target.x&&e.y===target.y){
+      lives--;
+      updateUI();
+      target={x:1,y:1};
+      render={x:1,y:1};
+
+      if(lives<=0){
+        alert("Game Over!");
+        newGame();
+      }
+    }
+  }
+}
+
+function ask(x,y){
+  let q=questions[Math.floor(Math.random()*questions.length)];
+  questionBox.style.display='flex';
+  questionText.textContent=q.q;
+  answers.innerHTML='';
+
+  q.a.forEach((ans,i)=>{
+    let b=document.createElement('button');
+    b.textContent=ans;
+    b.onclick=()=>{
+      if(i===q.c){maze[y][x]=1;score+=10;play(sfxCorrect);}else{play(sfxWrong);}
+      updateUI();
+      questionBox.style.display='none';
+    };
+    answers.appendChild(b);
+  });
+}
+
+function draw(){
+  if(!maze){requestAnimationFrame(draw);return;}
+
+  render.x+=(target.x-render.x)*0.25;
+  render.y+=(target.y-render.y)*0.25;
+
+  updateEnemies();
+
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  for(let y=0;y<rows;y++)for(let x=0;x<cols;x++){
+    ctx.fillStyle=maze[y][x]===0?"#000":maze[y][x]===4?"#00ff00":maze[y][x]===2?"orange":"#444";
+    ctx.fillRect(x*tile,y*tile,tile,tile);
+  }
+
+  ctx.fillStyle="red";
+  enemies.forEach(e=>ctx.fillRect(e.x*tile,e.y*tile,tile,tile));
+
+  ctx.fillStyle="cyan";
+  ctx.fillRect(render.x*tile,render.y*tile,tile,tile);
+
+  requestAnimationFrame(draw);
+}
+
+function move(dx,dy){
+  let nx=target.x+dx,ny=target.y+dy;
+  let t=maze[ny]?.[nx];
+  if(t===0||t==null) return;
+
+  if(t===2){ask(nx,ny);return;}
+
+  target.x=nx;target.y=ny;
+  play(sfxMove);
+
+  if(t===4){
+    level++;
+    updateUI();
+    play(sfxWin);
+    alert("Level Complete!");
+    newGame();
+  }
+}
+
+function newGame(){
+  maze=generate();
+  target={x:1,y:1};
+  render={x:1,y:1};
+  lives=3;
+  score=0;
+  updateUI();
+  initEnemies();
+}
+
+function startGame(){
+  unlockAudio();
+  menu.style.display='none';
+  wrap.style.display='flex';
+  newGame();
+  startMusic();
+}
+
+window.startGame=startGame;
+window.newGame=newGame;
+
+addEventListener('keydown',e=>{
+  if(e.key==='ArrowUp'||e.key==='w')move(0,-1);
+  if(e.key==='ArrowDown'||e.key==='s')move(0,1);
+  if(e.key==='ArrowLeft'||e.key==='a')move(-1,0);
+  if(e.key==='ArrowRight'||e.key==='d')move(1,0);
+});
+
+requestAnimationFrame(draw);
+</script>
+</body>
+</html>
+
 <style>
 body{margin:0;background:#0b1020;color:#e5e7eb;font-family:system-ui;text-align:center}
 #menu{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#0b1020;z-index:10}
