@@ -1,1 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Play Weaver's Brain Maze - a fun vocabulary maze game!">
+<link rel="icon" href="data:,">
+<style>
+/* Mobile friendly tweaks */
+@media (max-width: 700px){
+  #wrap{flex-direction:column; align-items:center}
+  canvas{width:90vw; height:auto}
+}
+</style>
+<meta charset="UTF-8">
+<title>Weaver's Brain Maze+</title>
+<style>
+  :root{--bg:#0f172a;--panel:#111827;--accent:#22c55e;--door:#f59e0b;--wall:#020617;--path:#1f2937;--player:#38bdf8}
+  body{margin:0;background:linear-gradient(180deg,#020617,#0f172a);color:#e5e7eb;font-family:system-ui,Arial;text-align:center}
+  header{padding:12px 0;font-weight:700}
+  #wrap{display:none;justify-content:center;gap:16px;align-items:flex-start;padding:10px}
+  canvas{background:#020617;border-radius:16px}
+  .panel{background:var(--panel);padding:12px;border-radius:14px}
+  .stat{display:flex;justify-content:space-between;margin:6px 0}
+  button{border:none;border-radius:10px;padding:10px 14px;margin:6px;cursor:pointer;background:#1f2937;color:white}
+  button.primary{background:var(--accent);color:#022c22;font-weight:bold}
 
+  #menu{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:linear-gradient(180deg,#020617,#0f172a)}
+  #menu h1{font-size:32px;margin-bottom:10px}
+
+  #questionBox{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.7)}
+  #qCard{background:white;color:black;padding:18px;border-radius:16px;width:300px}
+</style>
+</head>
+<body>
+
+<div id="menu">
+  <h1>🧠 Weaver's Brain Maze+</h1>
+  <p>Answer questions to escape the maze!</p>
+  <button class="primary" onclick="startGame()">▶ Play</button>
+</div>
+
+<header>Maze Game</header>
+<p>🎮 Use WASD or Arrow Keys • Answer questions to unlock doors • Reach the green exit!</p>
+<div id="wrap">
+  <canvas id="game" width="600" height="480"></canvas>
+  <div class="panel">
+    <div class="stat">Level: <b id="level">1</b></div>
+    <div class="stat">Score: <b id="score">0</b></div>
+    <div class="stat">Lives: <b id="lives">3</b></div>
+    <button onclick="newGame()">Restart</button>
+    <button onclick="toggleSound()">🔊 Toggle Sound</button>
+  </div>
+</div>
+
+<div id="questionBox">
+  <div id="qCard">
+    <p id="questionText"></p>
+    <div id="answers"></div>
+  </div>
+</div>
+
+<script>
+let tileSize=30, cols=21, rows=17;
+let level=1, score=0, lives=3;
+let maze, player, doorMap;
+
+// ===== SOUND SYSTEM (UPGRADED) =====
+let soundOn = true;
+
+const bgMusic = new Audio("https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8a2b3b8f1.mp3?filename=arcade-music-loop-110997.mp3");
+bgMusic.loop = true; bgMusic.volume = 0.4;
+
+const sfxMove = new Audio("https://cdn.pixabay.com/download/audio/2022/03/15/audio_5c8e4d7c1a.mp3?filename=click-124467.mp3");
+const sfxCorrect = new Audio("https://cdn.pixabay.com/download/audio/2022/03/15/audio_7a8b1e4c0a.mp3?filename=success-1-6297.mp3");
+const sfxWrong = new Audio("https://cdn.pixabay.com/download/audio/2022/03/15/audio_3a9f7c2b3d.mp3?filename=error-126627.mp3");
+const sfxWin = new Audio("https://cdn.pixabay.com/download/audio/2022/03/15/audio_0b2d3c4e5f.mp3?filename=win-6297.mp3");
+
+// NEW sounds
+const sfxDoorLocked = new Audio("https://cdn.pixabay.com/download/audio/2022/03/15/audio_0d6b1c5f.mp3?filename=locked-6924.mp3");
+const sfxDoorOpen = new Audio("https://cdn.pixabay.com/download/audio/2022/03/15/audio_4a1c2e8f.mp3?filename=unlock-6267.mp3");
+const sfxLevelUp = new Audio("https://cdn.pixabay.com/download/audio/2022/03/15/audio_9f7a3b2c.mp3?filename=level-up-191997.mp3");
+const sfxGameOver = new Audio("https://cdn.pixabay.com/download/audio/2022/03/15/audio_8b3c4d2e.mp3?filename=game-over-arcade-6435.mp3");
+
+function playSound(a){ if(!soundOn) return; a.currentTime=0; a.play().catch(()=>{}); }
+function startMusic(){ if(soundOn){ bgMusic.currentTime=0; bgMusic.play().catch(()=>{});} }
+function toggleSound(){ soundOn=!soundOn; if(!soundOn) bgMusic.pause(); else startMusic(); }
+
+// ===== GAME =====
+function startGame(){
+  // Required for browser audio autoplay policies
+  document.body.addEventListener('click', ()=>startMusic(), {once:true});
+  menu.style.display='none'; wrap.style.display='flex';
+  startMusic(); newGame();
+}
+
+function generateMaze(){
+  let m=Array.from({length:rows},()=>Array(cols).fill(0));
+  function carve(x,y){
+    const dirs=[[0,-2],[0,2],[-2,0],[2,0]].sort(()=>Math.random()-0.5);
+    for(const[dX,dY]of dirs){
+      let nx=x+dX, ny=y+dY;
+      if(nx>0&&ny>0&&nx<cols-1&&ny<rows-1&&m[ny][nx]===0){
+        m[y+dY/2][x+dX/2]=1; m[ny][nx]=1; carve(nx,ny);
+      }
+    }
+  }
+  m[1][1]=1; carve(1,1);
+  m[1][1]=3; m[rows-2][cols-2]=4;
+  for(let y=1;y<rows-1;y++)for(let x=1;x<cols-1;x++){
+    if(m[y][x]===1 && Math.random()<0.15) m[y][x]=2;
+  }
+  return m;
+}
+
+const questions=[
+  {q:"Liberty means?",a:["Freedom","Money","War"],c:0},
+  {q:"Justice is?",a:["Fairness","Chaos","Luck"],c:0}
+];
+
+const canvas=document.getElementById("game");
+const ctx=canvas.getContext("2d");
+
+function draw(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  for(let y=0;y<rows;y++)for(let x=0;x<cols;x++){
+    let t=maze[y][x];
+    if(t===0) ctx.fillStyle="#000";
+    if(t===1||t===3) ctx.fillStyle="#444";
+    if(t===2) ctx.fillStyle="orange";
+    if(t===4) ctx.fillStyle="green";
+    ctx.fillRect(x*tileSize,y*tileSize,tileSize,tileSize);
+  }
+  ctx.fillStyle="cyan";
+  ctx.fillRect(player.x*tileSize,player.y*tileSize,tileSize,tileSize);
+}
+
+function move(dx,dy){
+  let nx=player.x+dx, ny=player.y+dy;
+  let tile=maze[ny]?.[nx];
+  if(tile===0||tile==null) return;
+
+  if(tile===2){
+    let key=nx+","+ny;
+    if(!doorMap[key]){ playSound(sfxDoorLocked); ask(nx,ny); return; }
+  }
+
+  if(tile===4){
+    playSound(sfxWin);
+    level++;
+    playSound(sfxLevelUp);
+    alert("Level " + level + "!");
+    newGame();
+    return;
+  }
+
+  player.x=nx; player.y=ny;
+  playSound(sfxMove);
+}
+
+function ask(x,y){
+  let q=questions[Math.floor(Math.random()*questions.length)];
+  questionBox.style.display='flex';
+  questionText.textContent=q.q;
+  answers.innerHTML='';
+
+  q.a.forEach((ans,i)=>{
+    let b=document.createElement('button');
+    b.textContent=ans;
+    b.onclick=()=>{
+      if(i===q.c){ maze[y][x]=1; playSound(sfxDoorOpen); score+=10; }
+      else { lives--; playSound(sfxWrong); if(lives<=0){ gameOver(); return; }}
+      updateUI();
+      questionBox.style.display='none';
+    };
+    answers.appendChild(b);
+  });
+}
+
+function gameOver(){
+  playSound(sfxGameOver);
+  alert("Game Over! Score: "+score);
+  newGame();
+}
+
+function newGame(){
+  maze=generateMaze();
+  player={x:1,y:1}; doorMap={};
+  updateUI();
+}
+
+function updateUI(){
+  levelEl.textContent=level;
+  scoreEl.textContent=score;
+  livesEl.textContent=lives;
+}
+
+addEventListener('keydown',e=>{
+  if(questionBox.style.display==='flex') return;
+  if(e.key==='ArrowUp'||e.key==='w') move(0,-1);
+  if(e.key==='ArrowDown'||e.key==='s') move(0,1);
+  if(e.key==='ArrowLeft'||e.key==='a') move(-1,0);
+  if(e.key==='ArrowRight'||e.key==='d') move(1,0);
+});
+
+const menu=document.getElementById('menu');
+const wrap=document.getElementById('wrap');
+const questionBox=document.getElementById('questionBox');
+const questionText=document.getElementById('questionText');
+const answers=document.getElementById('answers');
+const levelEl=document.getElementById('level');
+const scoreEl=document.getElementById('score');
+const livesEl=document.getElementById('lives');
+
+setInterval(draw,30);
+</script>
+</body>
+</html>
