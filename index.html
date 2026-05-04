@@ -12,8 +12,6 @@ canvas{background:#000;border-radius:12px}
 .panel{background:#111827;padding:10px;border-radius:10px}
 button{padding:10px;margin:5px;border:0;border-radius:8px;cursor:pointer}
 .primary{background:#22c55e;font-weight:bold}
-#infoModal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.8)}
-#infoContent{background:#111827;padding:20px;border-radius:12px;width:90%;height:90%;overflow:auto;text-align:left}
 
 #questionBox{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.7)}
 #qCard{background:white;color:black;padding:18px;border-radius:12px;width:300px}
@@ -28,7 +26,7 @@ button{padding:10px;margin:5px;border:0;border-radius:8px;cursor:pointer}
 </div>
 
 <div id="wrap">
-  <canvas id="game" width="600" height="480"></canvas>
+  <canvas id="game"></canvas>
   <div class="panel">
     <div>Level: <b id="level">1</b></div>
     <div>Score: <b id="score">0</b></div>
@@ -44,42 +42,40 @@ button{padding:10px;margin:5px;border:0;border-radius:8px;cursor:pointer}
   </div>
 </div>
 
-<div id="infoModal">
-  <div id="infoContent">
-    <h2>How It Works</h2>
-    <p>The maze is generated using recursive backtracking.</p>
-    <p>Answer questions to unlock doors.</p>
-    <button onclick="closeInfo()">Close</button>
-  </div>
-</div>
-
-<div style="margin:15px">
-  <a href="#" onclick="openInfo()" style="color:#22c55e">Read How I Built This</a>
-</div>
-
 <script>
+// ===== CONFIG =====
 let tile=30, cols=20, rows=16;
 let maze;
 let target={x:1,y:1}, render={x:1,y:1};
 
+// canvas sized correctly
 const canvas=document.getElementById('game');
+canvas.width=cols*tile;
+canvas.height=rows*tile;
 const ctx=canvas.getContext('2d');
 
-// ===== SOUND SYSTEM =====
+// ===== AUDIO FIX (UNLOCK ON CLICK) =====
 let soundOn=true;
 
 const bgMusic=new Audio("https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8a2b3b8f1.mp3?filename=arcade-music-loop-110997.mp3");
 bgMusic.loop=true;
-bgMusic.volume=0.4;
+bgMusic.volume=0.3;
 
 const sfxMove=new Audio("https://cdn.pixabay.com/download/audio/2022/03/15/audio_5c8e4d7c1a.mp3?filename=click-124467.mp3");
 const sfxCorrect=new Audio("https://cdn.pixabay.com/download/audio/2022/03/15/audio_7a8b1e4c0a.mp3?filename=success-1-6297.mp3");
 const sfxWrong=new Audio("https://cdn.pixabay.com/download/audio/2022/03/15/audio_3a9f7c2b3d.mp3?filename=error-126627.mp3");
 const sfxWin=new Audio("https://cdn.pixabay.com/download/audio/2022/03/15/audio_0b2d3c4e5f.mp3?filename=win-6297.mp3");
 
-function play(a){if(!soundOn)return;a.currentTime=0;a.play().catch(()=>{});}
-function startMusic(){if(soundOn){bgMusic.play().catch(()=>{});}}
+[sfxMove,sfxCorrect,sfxWrong,sfxWin,bgMusic].forEach(a=>a.volume=0.6);
 
+function unlockAudio(){
+  bgMusic.play().then(()=>bgMusic.pause()).catch(()=>{});
+}
+
+function play(a){if(!soundOn)return;a.currentTime=0;a.play().catch(()=>{});}
+function startMusic(){if(soundOn){bgMusic.currentTime=0;bgMusic.play().catch(()=>{});}}
+
+// ===== QUESTIONS =====
 const questionBox=document.getElementById('questionBox');
 const questionText=document.getElementById('questionText');
 const answers=document.getElementById('answers');
@@ -115,6 +111,7 @@ let questions=[
   {q:"Debugging is?",a:["Fixing errors","Writing","Deleting"],c:0}
 ];
 
+// ===== MAZE (EXIT FIXED INSIDE GRID) =====
 function generate(){
   let m=Array.from({length:rows},()=>Array(cols).fill(0));
 
@@ -133,20 +130,24 @@ function generate(){
   m[1][1]=1;
   carve(1,1);
 
-  let ex=cols-2,ey=rows-2;
+  let ex=cols-2, ey=rows-2;
+
+  // guarantee path
   for(let x=1;x<=ex;x++) m[1][x]=1;
   for(let y=1;y<=ey;y++) m[y][ex]=1;
 
+  // doors
   for(let i=0;i<12;i++){
     let x=Math.floor(Math.random()*cols);
     let y=Math.floor(Math.random()*rows);
     if(m[y][x]===1 && !(x===1&&y===1) && !(x===ex&&y===ey)) m[y][x]=2;
   }
 
-  m[ey][ex]=4;
+  m[ey][ex]=4; // EXIT ALWAYS INSIDE GRID
   return m;
 }
 
+// ===== GAME =====
 function ask(x,y){
   let q=questions[Math.floor(Math.random()*questions.length)];
   questionBox.style.display='flex';
@@ -157,12 +158,7 @@ function ask(x,y){
     let b=document.createElement('button');
     b.textContent=ans;
     b.onclick=()=>{
-      if(i===q.c){
-        maze[y][x]=1;
-        play(sfxCorrect);
-      }else{
-        play(sfxWrong);
-      }
+      if(i===q.c){maze[y][x]=1;play(sfxCorrect);}else{play(sfxWrong);}
       questionBox.style.display='none';
     };
     answers.appendChild(b);
@@ -178,7 +174,7 @@ function draw(){
   ctx.clearRect(0,0,canvas.width,canvas.height);
 
   for(let y=0;y<rows;y++)for(let x=0;x<cols;x++){
-    ctx.fillStyle=maze[y][x]===0?"#000":maze[y][x]===4?"green":maze[y][x]===2?"orange":"#444";
+    ctx.fillStyle=maze[y][x]===0?"#000":maze[y][x]===4?"#00ff00":maze[y][x]===2?"orange":"#444";
     ctx.fillRect(x*tile,y*tile,tile,tile);
   }
 
@@ -198,11 +194,7 @@ function move(dx,dy){
   target.x=nx;target.y=ny;
   play(sfxMove);
 
-  if(t===4){
-    play(sfxWin);
-    alert("You Win!");
-    newGame();
-  }
+  if(t===4){play(sfxWin);alert("You Win!");newGame();}
 }
 
 function newGame(){
@@ -212,9 +204,10 @@ function newGame(){
 }
 
 function startGame(){
+  unlockAudio();
   menu.style.display='none';
   wrap.style.display='flex';
-  if(!maze) newGame();
+  newGame();
   startMusic();
 }
 
@@ -224,9 +217,6 @@ addEventListener('keydown',e=>{
   if(e.key==='ArrowLeft'||e.key==='a')move(-1,0);
   if(e.key==='ArrowRight'||e.key==='d')move(1,0);
 });
-
-function openInfo(){document.getElementById('infoModal').style.display='flex';}
-function closeInfo(){document.getElementById('infoModal').style.display='none';}
 
 const menu=document.getElementById('menu');
 const wrap=document.getElementById('wrap');
