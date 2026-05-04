@@ -1,36 +1,31 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Weaver's Brain Maze+</title>
 <style>
-body{margin:0;background:#0b1020;color:#e5e7eb;font-family:system-ui;text-align:center}
-#menu{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#0b1020;z-index:999}
-#wrap{display:none;justify-content:center;gap:16px;padding:10px}
-canvas{background:#000;border-radius:12px}
+body{margin:0;font-family:system-ui;background:#0b1020;color:#e5e7eb;text-align:center}
+#menu{position:fixed;inset:0;display:flex;flex-direction:column;justify-content:center;align-items:center;background:#0b1020;z-index:10}
+#wrap{display:none;justify-content:center;gap:15px;padding:10px}
+canvas{background:#000;border-radius:10px}
 .panel{background:#111827;padding:10px;border-radius:10px;min-width:140px}
 button{padding:10px;margin:5px;border:0;border-radius:8px;cursor:pointer}
 .primary{background:#22c55e;font-weight:bold}
-#questionBox{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.7);z-index:20}
-#qCard{background:white;color:black;padding:18px;border-radius:12px;width:320px}
-#infoLink{position:fixed;bottom:10px;width:100%;text-align:center;font-size:14px;color:#93c5fd;cursor:pointer;z-index:50}
-#infoModal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.85);z-index:100}
-#infoCard{background:#111827;color:#e5e7eb;padding:20px;border-radius:12px;width:80%;max-width:500px;text-align:left}
+#questionBox{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.7)}
+#qCard{background:#fff;color:#000;padding:15px;border-radius:10px;width:320px}
 </style>
 </head>
 <body>
 
 <div id="menu">
   <h1>🧠 Weaver's Brain Maze+</h1>
-  <h3>Created by Kara Smith</h3>
-  <button id="playBtn" class="primary">Play</button>
+  <button class="primary" onclick="startGame()">Play</button>
 </div>
 
 <div id="wrap">
   <canvas id="game"></canvas>
   <div class="panel">
-    <div>Level: <b id="level">1</b></div>
     <div>Score: <b id="score">0</b></div>
     <div>Lives: <b id="lives">3</b></div>
     <button onclick="newGame()">Restart</button>
@@ -39,52 +34,22 @@ button{padding:10px;margin:5px;border:0;border-radius:8px;cursor:pointer}
 
 <div id="questionBox">
   <div id="qCard">
-    <p id="questionText"></p>
+    <p id="qText"></p>
     <div id="answers"></div>
   </div>
 </div>
 
-<div id="infoLink" onclick="openInfo()">📘 Read How I Built This</div>
-
-<div id="infoModal">
-  <div id="infoCard">
-    <h2>How I Built This</h2>
-    <p>Maze generated using randomized depth-first search.</p>
-    <p>Doors require answering coding vocabulary questions.</p>
-    <p>Exit is always placed on a reachable path tile.</p>
-    <button onclick="closeInfo()">Close</button>
-  </div>
-</div>
-
 <script>
-let tile=30, cols=20, rows=16;
-let maze;
-let score=0, level=1, lives=3;
-let player={x:1,y:1}, view={x:1,y:1};
+const cols=20, rows=16, tile=30;
+let maze=[], player;
+let score=0, lives=3;
 
-const canvas=document.getElementById('game');
+const canvas=document.getElementById("game");
 canvas.width=cols*tile;
 canvas.height=rows*tile;
-const ctx=canvas.getContext('2d');
+const ctx=canvas.getContext("2d");
 
-const menu=document.getElementById('menu');
-const wrap=document.getElementById('wrap');
-const playBtn=document.getElementById('playBtn');
-
-const levelEl=document.getElementById('level');
-const scoreEl=document.getElementById('score');
-const livesEl=document.getElementById('lives');
-
-function updateUI(){
-  levelEl.textContent=level;
-  scoreEl.textContent=score;
-  livesEl.textContent=lives;
-}
-
-const questionBox=document.getElementById('questionBox');
-const questionText=document.getElementById('questionText');
-const answers=document.getElementById('answers');
-
+// 28 TERMS RESTORED
 const questions=[
 {q:"A step-by-step set of instructions for solving a problem.",a:["Algorithm","Value","String"],c:0},
 {q:"A specific piece of data a program stores or uses.",a:["Value","Variable","Number"],c:0},
@@ -124,8 +89,8 @@ function generate(){
     for(let [dx,dy] of dirs){
       let nx=x+dx,ny=y+dy;
       if(nx>0&&ny>0&&nx<cols-1&&ny<rows-1&&m[ny][nx]===0){
-        m[y+dy/2][x+dx/2]=1;
         m[ny][nx]=1;
+        m[y+dy/2][x+dx/2]=1;
         carve(nx,ny);
       }
     }
@@ -134,67 +99,53 @@ function generate(){
   m[1][1]=1;
   carve(1,1);
 
-  let candidates=[];
-  for(let y=1;y<rows-1;y++){
-    for(let x=1;x<cols-1;x++){
-      if(m[y][x]===1 && !(x===1&&y===1)) candidates.push({x,y});
+  // exit
+  let ex=cols-2,ey=rows-2;
+  m[ey][ex]=1;
+
+  // doors
+  for(let i=0;i<20;i++){
+    let x=Math.floor(Math.random()*cols);
+    let y=Math.floor(Math.random()*rows);
+    if(m[y][x]===1 && !(x===1&&y===1) && !(x===ex&&y===ey)){
+      m[y][x]=2;
     }
   }
 
-  let pick=candidates[Math.floor(Math.random()*candidates.length)]||{x:cols-2,y:rows-2};
-  let ex=pick.x, ey=pick.y;
-
-  for(let i=0;i<25;i++){
-    let x=Math.floor(Math.random()*cols);
-    let y=Math.floor(Math.random()*rows);
-    if(m[y][x]===1 && !(x===1&&y===1) && !(x===ex&&y===ey)) m[y][x]=2;
-  }
-
-  const dirs4=[[1,0],[-1,0],[0,1],[0,-1]];
-  for(let [dx,dy] of dirs4){
-    let nx=ex+dx,ny=ey+dy;
-    if(nx>0&&ny>0&&nx<cols-1&&ny<rows-1) m[ny][nx]=1;
-  }
-
   m[ey][ex]=4;
-
   return m;
 }
 
-function askDoor(x,y){
+function ask(x,y){
   let q=questions[Math.floor(Math.random()*questions.length)];
-  questionBox.style.display="flex";
-  questionText.textContent=q.q;
-  answers.innerHTML="";
+  document.getElementById("questionBox").style.display="flex";
+  document.getElementById("qText").textContent=q.q;
 
-  q.a.forEach((ans,i)=>{
+  let ans=document.getElementById("answers");
+  ans.innerHTML="";
+
+  q.a.forEach((a,i)=>{
     let b=document.createElement("button");
-    b.textContent=ans;
+    b.textContent=a;
     b.onclick=()=>{
       if(i===q.c){maze[y][x]=1;player={x,y};score+=10;}
-      questionBox.style.display="none";
-      updateUI();
+      document.getElementById("questionBox").style.display="none";
     };
-    answers.appendChild(b);
+    ans.appendChild(b);
   });
 }
 
 function draw(){
-  if(!maze){requestAnimationFrame(draw);return;}
-
-  view.x+=(player.x-view.x)*0.2;
-  view.y+=(player.y-view.y)*0.2;
-
   ctx.clearRect(0,0,canvas.width,canvas.height);
 
   for(let y=0;y<rows;y++)for(let x=0;x<cols;x++){
     let t=maze[y][x];
-    ctx.fillStyle=t===0?"#000":t===4?"#0f0":t===2?"orange":"#444";
+    ctx.fillStyle=t===0?"#000":t===4?"green":t===2?"orange":"#444";
     ctx.fillRect(x*tile,y*tile,tile,tile);
   }
 
   ctx.fillStyle="cyan";
-  ctx.fillRect(view.x*tile,view.y*tile,tile,tile);
+  ctx.fillRect(player.x*tile,player.y*tile,tile,tile);
 
   requestAnimationFrame(draw);
 }
@@ -204,40 +155,33 @@ function move(dx,dy){
   let t=maze[ny]?.[nx];
   if(t===0||t==null) return;
 
-  if(t===2){askDoor(nx,ny);return;}
+  if(t===2){ask(nx,ny);return;}
 
   player={x:nx,y:ny};
 
-  if(t===4){level++;updateUI();alert("Level Complete!");newGame();}
+  if(t===4){alert("Level Complete!");newGame();}
 }
+
+document.addEventListener("keydown",e=>{
+  if(e.key=="ArrowUp"||e.key=="w") move(0,-1);
+  if(e.key=="ArrowDown"||e.key=="s") move(0,1);
+  if(e.key=="ArrowLeft"||e.key=="a") move(-1,0);
+  if(e.key=="ArrowRight"||e.key=="d") move(1,0);
+});
 
 function newGame(){
   maze=generate();
-  player={x:1,y:1};view={x:1,y:1};
+  player={x:1,y:1};
   score=0;lives=3;
-  updateUI();
 }
 
 function startGame(){
-  menu.style.display="none";
-  wrap.style.display="flex";
+  document.getElementById("menu").style.display="none";
+  document.getElementById("wrap").style.display="flex";
   newGame();
+  draw();
 }
-
-function openInfo(){document.getElementById('infoModal').style.display='flex';}
-function closeInfo(){document.getElementById('infoModal').style.display='none';}
-
-// FIX: movement controls restored
-addEventListener('keydown',(e)=>{
-  if(questionBox.style.display==='flex') return;
-  if(e.key==='ArrowUp'||e.key==='w') move(0,-1);
-  if(e.key==='ArrowDown'||e.key==='s') move(0,1);
-  if(e.key==='ArrowLeft'||e.key==='a') move(-1,0);
-  if(e.key==='ArrowRight'||e.key==='d') move(1,0);
-});
-
-playBtn.addEventListener('click',startGame);
-requestAnimationFrame(draw);
 </script>
+
 </body>
 </html>
