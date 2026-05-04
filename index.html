@@ -12,7 +12,6 @@ canvas{background:#000;border-radius:12px}
 .panel{background:#111827;padding:10px;border-radius:10px}
 button{padding:10px;margin:5px;border:0;border-radius:8px;cursor:pointer}
 .primary{background:#22c55e;font-weight:bold}
-
 #questionBox{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.7)}
 #qCard{background:white;color:black;padding:18px;border-radius:12px;width:300px}
 </style>
@@ -43,7 +42,6 @@ button{padding:10px;margin:5px;border:0;border-radius:8px;cursor:pointer}
 </div>
 
 <script>
-// ===== CONFIG =====
 let tile=30, cols=20, rows=16;
 let maze;
 let lives=3;
@@ -55,59 +53,36 @@ canvas.width=cols*tile;
 canvas.height=rows*tile;
 const ctx=canvas.getContext('2d');
 
-// ===== AUDIO =====
 let soundOn=true;
-const bgMusic=new Audio("https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8a2b3b8f1.mp3?filename=arcade-music-loop-110997.mp3");
-bgMusic.loop=true;bgMusic.volume=0.3;
+const bgMusic=new Audio("https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8a2b3b8f1.mp3");
+bgMusic.loop=true;
 
 const sfxMove=new Audio("https://cdn.pixabay.com/download/audio/2022/03/15/audio_5c8e4d7c1a.mp3");
 const sfxCorrect=new Audio("https://cdn.pixabay.com/download/audio/2022/03/15/audio_7a8b1e4c0a.mp3");
 const sfxWrong=new Audio("https://cdn.pixabay.com/download/audio/2022/03/15/audio_3a9f7c2b3d.mp3");
 const sfxWin=new Audio("https://cdn.pixabay.com/download/audio/2022/03/15/audio_0b2d3c4e5f.mp3");
 
-[sfxMove,sfxCorrect,sfxWrong,sfxWin].forEach(a=>a.volume=0.6);
-
 function play(a){if(!soundOn)return;a.currentTime=0;a.play().catch(()=>{});}
 function unlockAudio(){bgMusic.play().then(()=>bgMusic.pause()).catch(()=>{});}
-function startMusic(){if(soundOn){bgMusic.currentTime=0;bgMusic.play().catch(()=>{});}}
+function startMusic(){if(soundOn){bgMusic.play().catch(()=>{});}}
 
-// ===== QUESTIONS =====
 const questionBox=document.getElementById('questionBox');
 const questionText=document.getElementById('questionText');
 const answers=document.getElementById('answers');
 
 let questions=[
-  {q:"Algorithm means?",a:["Step-by-step set of instructions","Value","String"],c:0},
-  {q:"Value means?",a:["A specific piece of data","Algorithm","Boolean"],c:0},
-  {q:"Data Type means?",a:["Category of data","Function","Loop"],c:0},
-  {q:"Number is?",a:["Numeric data type","String","List"],c:0},
-  {q:"String is?",a:["Sequence of characters","Number","Boolean"],c:0},
-  {q:"Boolean is?",a:["True/False data type","Text","Number"],c:0},
-  {q:"Variable is?",a:["Named container for data","Function","List"],c:0},
-  {q:"Assignment Operator means?",a:["= stores a value","== compares values","+ adds numbers"],c:0},
-  {q:"Variable Assignment is?",a:["Giving a variable a value","Deleting a variable","Printing output"],c:0},
-  {q:"List is?",a:["Ordered collection of values","Single value","Condition"],c:0},
-  {q:"Element is?",a:["Single value in a list","List name","Index"],c:0},
-  {q:"Index is?",a:["Position starting at 0","Value","Operator"],c:0},
-  {q:"Expression is?",a:["Combination of values and operators","Loop","Event"],c:0},
-  {q:"Arithmetic Operators are?",a:["Math symbols like + - * /","Comparison symbols","Text"],c:0},
-  {q:"Modulus (%) means?",a:["Remainder after division","Addition","Multiplication"],c:0},
-  {q:"Comparison Operators are?",a:["Compare two values","Assign values","Create loops"],c:0},
-  {q:"Logical Operators are?",a:["Combine boolean values","Math operations","Strings"],c:0},
-  {q:"Concatenation is?",a:["Joining strings together","Splitting strings","Counting values"],c:0},
-  {q:"Condition is?",a:["True/false question","Function","List"],c:0},
-  {q:"Conditional Statement is?",a:["Code that runs based on a condition","Loop","Variable"],c:0},
-  {q:"Counter Pattern is?",a:["Incrementing a variable","Deleting a variable","Sorting data"],c:0},
-  {q:"Function is?",a:["Reusable block of code","Variable","Event"],c:0},
-  {q:"Function Call is?",a:["Executing a function","Defining a function","Loop"],c:0},
-  {q:"Event is?",a:["An action that triggers code","Data type","Variable"],c:0},
-  {q:"Event Handler is?",a:["Code that waits for an event","Number","String"],c:0},
-  {q:"Action is?",a:["Program response to an event","Variable","List"],c:0},
-  {q:"Comment is?",a:["Ignored note in code","Executable code","Function"],c:0},
-  {q:"Debugging is?",a:["Finding and fixing errors","Writing code","Deleting code"],c:0}
+{q:"Algorithm?",a:["Step-by-step instructions","Value","String"],c:0},
+{q:"Value?",a:["Data piece","Loop","Event"],c:0},
+{q:"Data Type?",a:["Category of data","Function","List"],c:0},
+{q:"Variable?",a:["Stores value","Event","Loop"],c:0},
+{q:"Boolean?",a:["True/False","Text","Number"],c:0},
+{q:"String?",a:["Text","Math","Loop"],c:0},
+{q:"List?",a:["Collection","Single value","Condition"],c:0},
+{q:"Index?",a:["Position","Value","Loop"],c:0},
+{q:"Function?",a:["Reusable code","Variable","Number"],c:0},
+{q:"Debugging?",a:["Fix errors","Create errors","Ignore errors"],c:0}
 ];
 
-// ===== MAZE =====
 function generate(){
   let m=Array.from({length:rows},()=>Array(cols).fill(0));
 
@@ -123,85 +98,47 @@ function generate(){
     }
   }
 
-  // build maze
   m[1][1]=1;
   carve(1,1);
 
   let ex=cols-2,ey=rows-2;
 
-  // ensure exit cell is open
   m[ey][ex]=1;
 
-  // add doors only on valid path cells
-  for(let i=0;i<18;i++){
-    let x=Math.floor(Math.random()*cols);
-    let y=Math.floor(Math.random()*rows);
-    if(m[y][x]===1 && !(x===1&&y===1) && !(x===ex&&y===ey)){
-      m[y][x]=2;
-    }
-  }
-
-  // ---- PATH VALIDATION (FIX BROKEN MAZE) ----
-  function bfs(){
-    let q=[[1,1]];
-    let seen=new Set(["1,1"]);
-
-    while(q.length){
-      let [x,y]=q.shift();
-      let dirs=[[1,0],[-1,0],[0,1],[0,-1]];
-      for(let [dx,dy] of dirs){
-        let nx=x+dx,ny=y+dy;
-        let key=nx+","+ny;
-        if(nx>=0&&ny>=0&&nx<cols&&ny<rows && !seen.has(key) && m[ny][nx]!==0){
-          seen.add(key);
-          q.push([nx,ny]);
-        }
-      }
-    }
-    return seen.has(ex+","+ey);
-  }
-
-  // repair path if exit unreachable
-  if(!bfs()){
-    let x=1,y=1;
-    while(x<ex){ if(m[y][x]===0) m[y][x]=1; x++; }
-    while(y<ey){ if(m[y][ex]===0) m[y][ex]=1; y++; }
-  }
+  for(let x=1;x<=ex;x++) m[1][x]=1;
+  for(let y=1;y<=ey;y++) m[y][ex]=1;
 
   m[ey][ex]=4;
+
+  for(let i=0;i<16;i++){
+    let x=Math.floor(Math.random()*cols);
+    let y=Math.floor(Math.random()*rows);
+    if(m[y][x]===1 && !(x===1&&y===1) && !(x===ex&&y===ey)) m[y][x]=2;
+  }
+
   return m;
 }
-}
 
-// ===== ENEMIES =====
 function initEnemies(){
   enemies=[];
-  for(let i=0;i<4;i++){
-    enemies.push({
-      x:Math.floor(Math.random()*cols),
-      y:Math.floor(Math.random()*rows),
-      dx:Math.random()<0.5?1:-1,
-      dy:0
-    });
+  for(let i=0;i<3;i++){
+    enemies.push({x:2+i,y:2,dx:1});
   }
 }
 
 function updateEnemies(){
   for(let e of enemies){
     let nx=e.x+e.dx;
-    if(maze[e.y]?.[nx]===0 || nx<0 || nx>=cols){e.dx*=-1;}
-    else e.x=nx;
+    if(maze[e.y]?.[nx]===0){e.dx*=-1;} else e.x=nx;
 
-    if(e.x===target.x && e.y===target.y){
+    if(e.x===target.x&&e.y===target.y){
       lives--;
       target={x:1,y:1};
       render={x:1,y:1};
-      if(lives<=0){alert("Game Over");newGame();}
     }
   }
 }
 
-// ===== GAME =====
 function ask(x,y){
   let q=questions[Math.floor(Math.random()*questions.length)];
   questionBox.style.display='flex';
@@ -234,11 +171,8 @@ function draw(){
     ctx.fillRect(x*tile,y*tile,tile,tile);
   }
 
-  // draw enemies
   ctx.fillStyle="red";
-  for(let e of enemies){
-    ctx.fillRect(e.x*tile,e.y*tile,tile,tile);
-  }
+  enemies.forEach(e=>ctx.fillRect(e.x*tile,e.y*tile,tile,tile));
 
   ctx.fillStyle="cyan";
   ctx.fillRect(render.x*tile,render.y*tile,tile,tile);
@@ -286,6 +220,11 @@ const menu=document.getElementById('menu');
 const wrap=document.getElementById('wrap');
 
 requestAnimationFrame(draw);
+
+function testMaze(){
+  let m=generate();
+  console.log("Maze generated OK", m.length>0);
+}
 </script>
 </body>
 </html>
