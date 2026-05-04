@@ -131,14 +131,27 @@ function generate(){
     }
   }
 
+  // carve maze
   m[1][1]=1;
   carve(1,1);
 
-  // ensure exit is on maze
-  let ex=cols-2,ey=rows-2;
-  m[ey][ex]=1;
+  // collect all path tiles as possible exits
+  let candidates=[];
+  for(let y=1;y<rows-1;y++){
+    for(let x=1;x<cols-1;x++){
+      if(m[y][x]===1 && !(x===1&&y===1)){
+        candidates.push({x,y});
+      }
+    }
+  }
 
-  // place doors
+  // choose exit on actual path tile
+  let pick=candidates[Math.floor(Math.random()*candidates.length)];
+  if(!pick) pick={x:cols-2,y:rows-2};
+
+  let ex=pick.x, ey=pick.y;
+
+  // place doors (avoid exit and start)
   for(let i=0;i<25;i++){
     let x=Math.floor(Math.random()*cols);
     let y=Math.floor(Math.random()*rows);
@@ -149,6 +162,7 @@ function generate(){
 
   // mark exit
   m[ey][ex]=4;
+
   return m;
 }
 
