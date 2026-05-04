@@ -6,13 +6,13 @@
 <title>Weaver's Brain Maze+</title>
 <style>
 body{margin:0;background:#0b1020;color:#e5e7eb;font-family:system-ui;text-align:center}
-#menu{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#0b1020}
+#menu{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#0b1020;z-index:10}
 #wrap{display:none;justify-content:center;gap:16px;padding:10px}
 canvas{background:#000;border-radius:12px}
-.panel{background:#111827;padding:10px;border-radius:10px}
+.panel{background:#111827;padding:10px;border-radius:10px;min-width:140px}
 button{padding:10px;margin:5px;border:0;border-radius:8px;cursor:pointer}
 .primary{background:#22c55e;font-weight:bold}
-#questionBox{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.7)}
+#questionBox{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.7);z-index:20}
 #qCard{background:white;color:black;padding:18px;border-radius:12px;width:300px}
 </style>
 </head>
@@ -44,7 +44,10 @@ button{padding:10px;margin:5px;border:0;border-radius:8px;cursor:pointer}
 <script>
 let tile=30, cols=20, rows=16;
 let maze;
+let score=0;
+let level=1;
 let lives=3;
+
 let target={x:1,y:1}, render={x:1,y:1};
 let enemies=[];
 
@@ -52,6 +55,19 @@ const canvas=document.getElementById('game');
 canvas.width=cols*tile;
 canvas.height=rows*tile;
 const ctx=canvas.getContext('2d');
+
+const menu=document.getElementById('menu');
+const wrap=document.getElementById('wrap');
+
+const levelEl=document.getElementById('level');
+const scoreEl=document.getElementById('score');
+const livesEl=document.getElementById('lives');
+
+function updateUI(){
+  levelEl.textContent=level;
+  scoreEl.textContent=score;
+  livesEl.textContent=lives;
+}
 
 let soundOn=true;
 const bgMusic=new Audio("https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8a2b3b8f1.mp3");
@@ -103,8 +119,7 @@ function generate(){
 
   let ex=cols-2,ey=rows-2;
 
-  m[ey][ex]=1;
-
+  // ensure path to exit
   for(let x=1;x<=ex;x++) m[1][x]=1;
   for(let y=1;y<=ey;y++) m[y][ex]=1;
 
@@ -121,9 +136,7 @@ function generate(){
 
 function initEnemies(){
   enemies=[];
-  for(let i=0;i<3;i++){
-    enemies.push({x:2+i,y:2,dx:1});
-  }
+  for(let i=0;i<3;i++) enemies.push({x:2+i,y:2,dx:1});
 }
 
 function updateEnemies(){
@@ -133,8 +146,14 @@ function updateEnemies(){
 
     if(e.x===target.x&&e.y===target.y){
       lives--;
+      updateUI();
       target={x:1,y:1};
       render={x:1,y:1};
+
+      if(lives<=0){
+        alert("Game Over!");
+        newGame();
+      }
     }
   }
 }
@@ -149,7 +168,8 @@ function ask(x,y){
     let b=document.createElement('button');
     b.textContent=ans;
     b.onclick=()=>{
-      if(i===q.c){maze[y][x]=1;play(sfxCorrect);}else{play(sfxWrong);}
+      if(i===q.c){maze[y][x]=1;score+=10;play(sfxCorrect);}else{play(sfxWrong);}
+      updateUI();
       questionBox.style.display='none';
     };
     answers.appendChild(b);
@@ -190,7 +210,13 @@ function move(dx,dy){
   target.x=nx;target.y=ny;
   play(sfxMove);
 
-  if(t===4){play(sfxWin);alert("You Win!");newGame();}
+  if(t===4){
+    level++;
+    updateUI();
+    play(sfxWin);
+    alert("Level Complete!");
+    newGame();
+  }
 }
 
 function newGame(){
@@ -198,6 +224,8 @@ function newGame(){
   target={x:1,y:1};
   render={x:1,y:1};
   lives=3;
+  score=0;
+  updateUI();
   initEnemies();
 }
 
@@ -209,6 +237,9 @@ function startGame(){
   startMusic();
 }
 
+window.startGame=startGame;
+window.newGame=newGame;
+
 addEventListener('keydown',e=>{
   if(e.key==='ArrowUp'||e.key==='w')move(0,-1);
   if(e.key==='ArrowDown'||e.key==='s')move(0,1);
@@ -216,15 +247,7 @@ addEventListener('keydown',e=>{
   if(e.key==='ArrowRight'||e.key==='d')move(1,0);
 });
 
-const menu=document.getElementById('menu');
-const wrap=document.getElementById('wrap');
-
 requestAnimationFrame(draw);
-
-function testMaze(){
-  let m=generate();
-  console.log("Maze generated OK", m.length>0);
-}
 </script>
 </body>
 </html>
