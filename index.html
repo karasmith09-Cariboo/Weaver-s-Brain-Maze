@@ -21,7 +21,7 @@ button{padding:10px;margin:5px;border:0;border-radius:8px;cursor:pointer}
 <div id="menu">
   <h1>🧠 Weaver's Brain Maze+</h1>
   <h3>Created by Kara Smith</h3>
-  <button class="primary" onclick="startGame()">Play</button>
+  <button id="playBtn" class="primary">Play</button>
 </div>
 
 <div id="wrap">
@@ -44,10 +44,7 @@ button{padding:10px;margin:5px;border:0;border-radius:8px;cursor:pointer}
 <script>
 let tile=30, cols=20, rows=16;
 let maze;
-let score=0;
-let level=1;
-let lives=3;
-
+let score=0, level=1, lives=3;
 let target={x:1,y:1}, render={x:1,y:1};
 let enemies=[];
 
@@ -119,7 +116,6 @@ let questions=[
 
 function generate(){
   let m=Array.from({length:rows},()=>Array(cols).fill(0));
-
   function carve(x,y){
     let dirs=[[2,0],[-2,0],[0,2],[0,-2]].sort(()=>Math.random()-0.5);
     for(let [dx,dy] of dirs){
@@ -131,19 +127,15 @@ function generate(){
       }
     }
   }
-
   m[1][1]=1;
   carve(1,1);
-
   let ex=cols-2,ey=rows-2;
   m[ey][ex]=4;
-
   for(let i=0;i<25;i++){
     let x=Math.floor(Math.random()*cols);
     let y=Math.floor(Math.random()*rows);
     if(m[y][x]===1 && !(x===1&&y===1) && !(x===ex&&y===ey)) m[y][x]=2;
   }
-
   return m;
 }
 
@@ -157,7 +149,6 @@ function updateEnemies(){
     let dx=target.x-e.x;
     let dy=target.y-e.y;
     let moved=false;
-
     if(Math.abs(dx)>Math.abs(dy)){
       if(dx!==0 && maze[e.y]?.[e.x+Math.sign(dx)]!==0){e.x+=Math.sign(dx); moved=true;}
       if(!moved && dy!==0 && maze[e.y+Math.sign(dy)]?.[e.x]!==0){e.y+=Math.sign(dy); moved=true;}
@@ -165,18 +156,14 @@ function updateEnemies(){
       if(dy!==0 && maze[e.y+Math.sign(dy)]?.[e.x]!==0){e.y+=Math.sign(dy); moved=true;}
       if(!moved && dx!==0 && maze[e.y]?.[e.x+Math.sign(dx)]!==0){e.x+=Math.sign(dx); moved=true;}
     }
-
     if(!moved){
       let dirs=[[1,0],[-1,0],[0,1],[0,-1]].sort(()=>Math.random()-0.5);
       for(let [ax,ay] of dirs){
         if(maze[e.y+ay]?.[e.x+ax]!==0){e.x+=ax;e.y+=ay;break;}
       }
     }
-
     if(e.x===target.x&&e.y===target.y){
-      lives--;
-      updateUI();
-      target={x:1,y:1};render={x:1,y:1};
+      lives--;updateUI();target={x:1,y:1};render={x:1,y:1};
       if(lives<=0){alert("Game Over");newGame();}
     }
   }
@@ -184,25 +171,18 @@ function updateEnemies(){
 
 function draw(){
   if(!maze){requestAnimationFrame(draw);return;}
-
   render.x+=(target.x-render.x)*0.25;
   render.y+=(target.y-render.y)*0.25;
-
   updateEnemies();
-
   ctx.clearRect(0,0,canvas.width,canvas.height);
-
   for(let y=0;y<rows;y++)for(let x=0;x<cols;x++){
     ctx.fillStyle=maze[y][x]===0?"#000":maze[y][x]===4?"#0f0":maze[y][x]===2?"orange":"#444";
     ctx.fillRect(x*tile,y*tile,tile,tile);
   }
-
   ctx.fillStyle="red";
   enemies.forEach(e=>ctx.fillRect(e.x*tile,e.y*tile,tile,tile));
-
   ctx.fillStyle="cyan";
   ctx.fillRect(render.x*tile,render.y*tile,tile,tile);
-
   requestAnimationFrame(draw);
 }
 
@@ -210,12 +190,8 @@ function move(dx,dy){
   let nx=target.x+dx,ny=target.y+dy;
   let t=maze[ny]?.[nx];
   if(t===0||t==null) return;
-
   if(t===2){ask(nx,ny);return;}
-
-  target={x:nx,y:ny};
-  play(sfxMove);
-
+  target={x:nx,y:ny};play(sfxMove);
   if(t===4){level++;updateUI();play(sfxWin);alert("Level Complete");newGame();}
 }
 
@@ -224,7 +200,6 @@ function ask(x,y){
   questionBox.style.display="flex";
   questionText.textContent=q.q;
   answers.innerHTML="";
-
   q.a.forEach((ans,i)=>{
     let b=document.createElement("button");
     b.textContent=ans;
@@ -236,23 +211,14 @@ function ask(x,y){
   });
 }
 
-function newGame(){
-  maze=generate();
-  target={x:1,y:1};render={x:1,y:1};
-  lives=3;score=0;
-  updateUI();initEnemies();
-}
+function newGame(){maze=generate();target={x:1,y:1};render={x:1,y:1};lives=3;score=0;updateUI();initEnemies();}
 
-function startGame(){
-  unlockAudio();
-  menu.style.display="none";
-  wrap.style.display="flex";
-  newGame();
-  startMusic();
-}
+function startGame(){unlockAudio();menu.style.display="none";wrap.style.display="flex";newGame();startMusic();}
 
 window.startGame=startGame;
 window.newGame=newGame;
+
+document.getElementById('playBtn').addEventListener('click',startGame);
 
 addEventListener("keydown",e=>{
   if(questionBox.style.display==="flex")return;
