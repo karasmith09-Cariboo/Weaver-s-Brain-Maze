@@ -135,7 +135,7 @@ function generate(){
   m[1][1]=1;
   carve(1,1);
 
-  // collect all path tiles as possible exits
+  // collect path tiles
   let candidates=[];
   for(let y=1;y<rows-1;y++){
     for(let x=1;x<cols-1;x++){
@@ -145,13 +145,12 @@ function generate(){
     }
   }
 
-  // choose exit on actual path tile
   let pick=candidates[Math.floor(Math.random()*candidates.length)];
   if(!pick) pick={x:cols-2,y:rows-2};
 
   let ex=pick.x, ey=pick.y;
 
-  // place doors (avoid exit and start)
+  // place doors
   for(let i=0;i<25;i++){
     let x=Math.floor(Math.random()*cols);
     let y=Math.floor(Math.random()*rows);
@@ -160,10 +159,20 @@ function generate(){
     }
   }
 
+  // ensure exit is reachable by clearing neighbors
+  const dirs=[[1,0],[-1,0],[0,1],[0,-1]];
+  for(let [dx,dy] of dirs){
+    let nx=ex+dx, ny=ey+dy;
+    if(nx>0&&ny>0&&nx<cols-1&&ny<rows-1 && m[ny][nx]===0){
+      m[ny][nx]=1;
+    }
+  }
+
   // mark exit
   m[ey][ex]=4;
 
   return m;
+}
 }
 
 function askDoor(x,y){
