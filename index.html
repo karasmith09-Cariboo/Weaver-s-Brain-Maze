@@ -37,7 +37,6 @@ button{padding:10px;margin:5px;border:0;border-radius:8px;cursor:pointer}
   </div>
 </div>
 
-<!-- QUESTION BOX -->
 <div id="questionBox">
   <div id="qCard">
     <p id="questionText"></p>
@@ -66,6 +65,21 @@ let target={x:1,y:1}, render={x:1,y:1};
 const canvas=document.getElementById('game');
 const ctx=canvas.getContext('2d');
 
+// ===== SOUND SYSTEM =====
+let soundOn=true;
+
+const bgMusic=new Audio("https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8a2b3b8f1.mp3?filename=arcade-music-loop-110997.mp3");
+bgMusic.loop=true;
+bgMusic.volume=0.4;
+
+const sfxMove=new Audio("https://cdn.pixabay.com/download/audio/2022/03/15/audio_5c8e4d7c1a.mp3?filename=click-124467.mp3");
+const sfxCorrect=new Audio("https://cdn.pixabay.com/download/audio/2022/03/15/audio_7a8b1e4c0a.mp3?filename=success-1-6297.mp3");
+const sfxWrong=new Audio("https://cdn.pixabay.com/download/audio/2022/03/15/audio_3a9f7c2b3d.mp3?filename=error-126627.mp3");
+const sfxWin=new Audio("https://cdn.pixabay.com/download/audio/2022/03/15/audio_0b2d3c4e5f.mp3?filename=win-6297.mp3");
+
+function play(a){if(!soundOn)return;a.currentTime=0;a.play().catch(()=>{});}
+function startMusic(){if(soundOn){bgMusic.play().catch(()=>{});}}
+
 const questionBox=document.getElementById('questionBox');
 const questionText=document.getElementById('questionText');
 const answers=document.getElementById('answers');
@@ -78,31 +92,32 @@ let questions=[
   {q:"String is?",a:["Sequence of characters","Number","Boolean"],c:0},
   {q:"Boolean is?",a:["True/False type","Text","Number"],c:0},
   {q:"Variable is?",a:["Named container","Function","List"],c:0},
-  {q:"Assignment Operator means?",a:["= symbol stores value","== comparison","+ operator"],c:0},
-  {q:"Variable Assignment is?",a:["Giving variable a value","Deleting variable","Printing output"],c:0},
+  {q:"Assignment Operator means?",a:["= stores value","== compare","+ add"],c:0},
+  {q:"Variable Assignment is?",a:["Giving value","Deleting","Printing"],c:0},
   {q:"List is?",a:["Ordered collection","Single value","Condition"],c:0},
-  {q:"Element is?",a:["Single value in list","List name","Index"],c:0},
-  {q:"Index is?",a:["Position starting at 0","Value","Operator"],c:0},
-  {q:"Expression is?",a:["Combination producing result","Loop","Event"],c:0},
-  {q:"Arithmetic Operators are?",a:["Math symbols","Comparison symbols","Strings"],c:0},
-  {q:"Modulus (%) means?",a:["Remainder after division","Addition","Multiplication"],c:0},
-  {q:"Comparison Operators are?",a:["Compare values","Assign values","Loop control"],c:0},
-  {q:"Logical Operators are?",a:["Combine booleans","Math ops","Strings"],c:0},
-  {q:"Concatenation is?",a:["Joining strings","Splitting strings","Counting"],c:0},
-  {q:"Condition is?",a:["True/false question","Function","List"],c:0},
-  {q:"Conditional Statement is?",a:["Code based on condition","Loop","Variable"],c:0},
-  {q:"Counter Pattern is?",a:["Incrementing variable","Deleting variable","Sorting list"],c:0},
+  {q:"Element is?",a:["Value in list","List name","Index"],c:0},
+  {q:"Index is?",a:["Position starting 0","Value","Operator"],c:0},
+  {q:"Expression is?",a:["Produces result","Loop","Event"],c:0},
+  {q:"Arithmetic Operators are?",a:["Math symbols","Compare","Text"],c:0},
+  {q:"Modulus (%) means?",a:["Remainder","Add","Multiply"],c:0},
+  {q:"Comparison Operators are?",a:["Compare values","Assign","Loop"],c:0},
+  {q:"Logical Operators are?",a:["Boolean logic","Math","Text"],c:0},
+  {q:"Concatenation is?",a:["Join strings","Split","Count"],c:0},
+  {q:"Condition is?",a:["True/false test","Function","List"],c:0},
+  {q:"Conditional Statement is?",a:["If logic","Loop","Variable"],c:0},
+  {q:"Counter Pattern is?",a:["Incrementing variable","Deleting","Sorting"],c:0},
   {q:"Function is?",a:["Reusable block","Variable","Event"],c:0},
-  {q:"Function Call is?",a:["Executing function","Defining function","Loop"],c:0},
-  {q:"Event is?",a:["Action trigger","Data type","Variable"],c:0},
-  {q:"Event Handler is?",a:["Code waiting for event","Number","String"],c:0},
+  {q:"Function Call is?",a:["Run function","Define","Loop"],c:0},
+  {q:"Event is?",a:["Action trigger","Data","Variable"],c:0},
+  {q:"Event Handler is?",a:["Wait for event","Number","String"],c:0},
   {q:"Action is?",a:["Program response","Variable","List"],c:0},
-  {q:"Comment is?",a:["Ignored note","Executable code","Function"],c:0},
-  {q:"Debugging is?",a:["Finding/fixing errors","Writing code","Deleting project"],c:0}
+  {q:"Comment is?",a:["Ignored note","Code","Function"],c:0},
+  {q:"Debugging is?",a:["Fixing errors","Writing","Deleting"],c:0}
 ];
 
 function generate(){
   let m=Array.from({length:rows},()=>Array(cols).fill(0));
+
   function carve(x,y){
     let dirs=[[2,0],[-2,0],[0,2],[0,-2]].sort(()=>Math.random()-0.5);
     for(let [dx,dy] of dirs){
@@ -114,17 +129,21 @@ function generate(){
       }
     }
   }
+
   m[1][1]=1;
   carve(1,1);
 
-  // add doors
-  for(let i=0;i<10;i++){
+  let ex=cols-2,ey=rows-2;
+  for(let x=1;x<=ex;x++) m[1][x]=1;
+  for(let y=1;y<=ey;y++) m[y][ex]=1;
+
+  for(let i=0;i<12;i++){
     let x=Math.floor(Math.random()*cols);
     let y=Math.floor(Math.random()*rows);
-    if(m[y][x]===1) m[y][x]=2;
+    if(m[y][x]===1 && !(x===1&&y===1) && !(x===ex&&y===ey)) m[y][x]=2;
   }
 
-  m[rows-2][cols-2]=4;
+  m[ey][ex]=4;
   return m;
 }
 
@@ -140,6 +159,9 @@ function ask(x,y){
     b.onclick=()=>{
       if(i===q.c){
         maze[y][x]=1;
+        play(sfxCorrect);
+      }else{
+        play(sfxWrong);
       }
       questionBox.style.display='none';
     };
@@ -148,35 +170,39 @@ function ask(x,y){
 }
 
 function draw(){
-  if(maze){
-    render.x+=(target.x-render.x)*0.25;
-    render.y+=(target.y-render.y)*0.25;
+  if(!maze){requestAnimationFrame(draw);return;}
 
-    ctx.clearRect(0,0,canvas.width,canvas.height);
+  render.x+=(target.x-render.x)*0.25;
+  render.y+=(target.y-render.y)*0.25;
 
-    for(let y=0;y<rows;y++)for(let x=0;x<cols;x++){
-      ctx.fillStyle=maze[y][x]===0?"#000":maze[y][x]===4?"green":maze[y][x]===2?"orange":"#444";
-      ctx.fillRect(x*tile,y*tile,tile,tile);
-    }
+  ctx.clearRect(0,0,canvas.width,canvas.height);
 
-    ctx.fillStyle="cyan";
-    ctx.fillRect(render.x*tile,render.y*tile,tile,tile);
+  for(let y=0;y<rows;y++)for(let x=0;x<cols;x++){
+    ctx.fillStyle=maze[y][x]===0?"#000":maze[y][x]===4?"green":maze[y][x]===2?"orange":"#444";
+    ctx.fillRect(x*tile,y*tile,tile,tile);
   }
+
+  ctx.fillStyle="cyan";
+  ctx.fillRect(render.x*tile,render.y*tile,tile,tile);
+
   requestAnimationFrame(draw);
 }
 
 function move(dx,dy){
   let nx=target.x+dx,ny=target.y+dy;
-  let tileVal=maze[ny]?.[nx];
-  if(tileVal===0||tileVal==null) return;
+  let t=maze[ny]?.[nx];
+  if(t===0||t==null) return;
 
-  if(tileVal===2){
-    ask(nx,ny);
-    return;
+  if(t===2){ask(nx,ny);return;}
+
+  target.x=nx;target.y=ny;
+  play(sfxMove);
+
+  if(t===4){
+    play(sfxWin);
+    alert("You Win!");
+    newGame();
   }
-
-  target.x=nx;
-  target.y=ny;
 }
 
 function newGame(){
@@ -189,6 +215,7 @@ function startGame(){
   menu.style.display='none';
   wrap.style.display='flex';
   if(!maze) newGame();
+  startMusic();
 }
 
 addEventListener('keydown',e=>{
