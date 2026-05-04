@@ -1,4 +1,4 @@
-!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -141,7 +141,8 @@ function generate(){
   carve(1,1);
 
   let ex=cols-2,ey=rows-2;
-  m[ey][ex]=4;
+  m[ey][ex]=1;
+  // ensure exit is carved as reachable path then mark exit
 
   for(let i=0;i<25;i++){
     let x=Math.floor(Math.random()*cols);
