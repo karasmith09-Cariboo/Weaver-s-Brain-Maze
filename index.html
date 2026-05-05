@@ -7,7 +7,7 @@
 <style>
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
 body{margin:0;font-family:system-ui;background:#0b1020;color:#e5e7eb;text-align:center;user-select:none;}
-
+ 
 #menu{position:fixed;inset:0;display:flex;flex-direction:column;justify-content:center;align-items:center;background:#0b1020;z-index:10;gap:14px;padding:20px;}
 #menu h1{margin:0 0 4px;font-size:2rem;}
 .section{background:#111827;padding:12px 16px;border-radius:12px;width:100%;max-width:420px;}
@@ -20,7 +20,7 @@ body{margin:0;font-family:system-ui;background:#0b1020;color:#e5e7eb;text-align:
 #playBtn{padding:12px 40px;font-size:16px;font-weight:bold;border:none;border-radius:10px;background:#22c55e;color:#052e16;cursor:pointer;transition:transform .1s;}
 #playBtn:hover{transform:scale(1.04);}
 #menuHS{font-size:13px;color:#4b5563;}
-
+ 
 #wrap{display:none;flex-direction:column;align-items:center;gap:8px;padding:10px;}
 #hud{display:flex;gap:8px;align-items:center;justify-content:center;flex-wrap:wrap;}
 .hud-pill{background:#111827;padding:6px 12px;border-radius:8px;font-size:13px;display:flex;align-items:center;gap:5px;}
@@ -29,19 +29,19 @@ body{margin:0;font-family:system-ui;background:#0b1020;color:#e5e7eb;text-align:
 #scoreEl{color:#22c55e;font-weight:bold;}
 #levelEl{color:#a78bfa;font-weight:bold;}
 #hsEl{color:#4b5563;}
-
+ 
 #gameRow{display:flex;gap:10px;align-items:flex-start;justify-content:center;}
 canvas{display:block;}
 #game{border-radius:10px;background:#000;}
 #minimap{border-radius:6px;border:1px solid #1f2937;}
-
+ 
 #dpad{display:grid;grid-template-columns:repeat(3,48px);grid-template-rows:repeat(3,48px);gap:4px;margin:8px auto 4px;}
 #dpad button{background:#111827;border:1px solid #1f2937;border-radius:8px;color:#9ca3af;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;touch-action:manipulation;transition:background .1s;}
 #dpad button:active{background:#1f2937;color:#e5e7eb;}
 #dpad .empty{background:transparent;border:none;pointer-events:none;}
 #menuBtn{background:#1f2937;border:1px solid #374151;color:#9ca3af;padding:6px 18px;border-radius:8px;cursor:pointer;font-size:13px;}
 #menuBtn:hover{color:#e5e7eb;}
-
+ 
 #qOverlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.8);z-index:20;}
 #qCard{background:#111827;color:#e5e7eb;padding:22px;border-radius:16px;width:350px;max-width:92vw;border:1px solid #1f2937;}
 #qCat{font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:.06em;margin:0 0 8px;}
@@ -54,19 +54,20 @@ canvas{display:block;}
 .ans-btn.correct{background:#052e16;border-color:#22c55e;color:#86efac;}
 .ans-btn.wrong{background:#450a0a;border-color:#ef4444;color:#fca5a5;}
 #feedback{margin-top:12px;font-size:13px;min-height:16px;color:#f59e0b;}
-
+ 
 #banner{position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:30;pointer-events:none;}
 #bannerTxt{font-size:3.5rem;font-weight:bold;color:#a78bfa;text-shadow:0 0 30px #7c3aed66;animation:pop .5s ease-out forwards;}
 @keyframes pop{0%{transform:scale(.4);opacity:0}60%{transform:scale(1.1)}100%{transform:scale(1);opacity:1}}
-
+ 
 #streakFlash{position:fixed;top:40%;left:50%;transform:translate(-50%,-50%);pointer-events:none;font-size:2rem;font-weight:bold;color:#f59e0b;opacity:0;transition:opacity .25s;z-index:25;}
 </style>
 </head>
 <body>
-
+ 
 <div id="menu">
   <h1>🧠 Weaver's Brain Maze+</h1>
-
+  <p style="margin:0;font-size:14px;color:#6b7280;">by Kara Smith</p>
+ 
   <div class="section">
     <p class="section-label">Difficulty</p>
     <div class="row">
@@ -75,7 +76,7 @@ canvas{display:block;}
       <button class="chip" onclick="setDiff('hard',this)">🔴 Hard</button>
     </div>
   </div>
-
+ 
   <div class="section">
     <p class="section-label">Category</p>
     <div class="row">
@@ -87,11 +88,11 @@ canvas{display:block;}
       <button class="chip" onclick="setCat('debug',this)">Algorithms &amp; Debug</button>
     </div>
   </div>
-
+ 
   <button id="playBtn" onclick="startGame()">▶ Play</button>
   <div id="menuHS"></div>
 </div>
-
+ 
 <div id="wrap">
   <div id="hud">
     <div class="hud-pill">Lv <span id="levelEl">1</span></div>
@@ -100,12 +101,12 @@ canvas{display:block;}
     <div class="hud-pill">🔥 <span id="streakEl">0×</span></div>
     <div class="hud-pill">Best <span id="hsEl">0</span></div>
   </div>
-
+ 
   <div id="gameRow">
     <canvas id="game"></canvas>
     <canvas id="minimap" width="100" height="80"></canvas>
   </div>
-
+ 
   <div id="dpad">
     <div class="empty"></div>
     <button ontouchstart="move(0,-1)" onclick="move(0,-1)">▲</button>
@@ -117,10 +118,69 @@ canvas{display:block;}
     <button ontouchstart="move(0,1)" onclick="move(0,1)">▼</button>
     <div class="empty"></div>
   </div>
-
+ 
   <button id="menuBtn" onclick="goMenu()">← Menu</button>
+  <button onclick="document.getElementById('infoModal').style.display='flex'" style="background:none;border:none;color:#6b7280;font-size:13px;cursor:pointer;text-decoration:underline;margin-top:4px;">Read How I Built This →</button>
 </div>
-
+ 
+<!-- INFO MODAL -->
+<div id="infoModal" style="position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.85);z-index:40;padding:16px;">
+  <div style="background:#111827;border:1px solid #1f2937;border-radius:16px;max-width:480px;width:100%;max-height:85vh;overflow-y:auto;padding:24px;text-align:left;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <h2 style="margin:0;font-size:18px;color:#e5e7eb;">🧠 About This Game</h2>
+      <button onclick="document.getElementById('infoModal').style.display='none'" style="background:none;border:none;color:#6b7280;font-size:22px;cursor:pointer;line-height:1;">×</button>
+    </div>
+ 
+    <h3 style="font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:#6b7280;margin:0 0 8px;">How I Built It</h3>
+    <p style="font-size:14px;line-height:1.7;color:#d1d5db;margin:0 0 12px;">
+      This game was built entirely with <strong style="color:#e5e7eb;">HTML, CSS, and vanilla JavaScript</strong> — no game engine or external libraries. The maze is generated fresh every level using a <strong style="color:#e5e7eb;">recursive backtracker algorithm</strong>, which carves paths through a grid to create a unique, solvable maze each time.
+    </p>
+    <p style="font-size:14px;line-height:1.7;color:#d1d5db;margin:0 0 12px;">
+      All sound effects are generated in real time using the <strong style="color:#e5e7eb;">Web Audio API</strong> — no audio files are loaded. Each sound is built from oscillator nodes with custom frequencies, wave types, and fade curves.
+    </p>
+    <p style="font-size:14px;line-height:1.7;color:#d1d5db;margin:0 0 20px;">
+      The game is drawn frame-by-frame on an HTML <strong style="color:#e5e7eb;">Canvas element</strong> using <code style="background:#1f2937;padding:2px 6px;border-radius:4px;font-size:13px;">requestAnimationFrame</code>. The minimap is a second smaller canvas that tracks which tiles you've visited. High scores are saved locally using <strong style="color:#e5e7eb;">localStorage</strong>.
+    </p>
+ 
+    <div style="border-top:1px solid #1f2937;padding-top:16px;">
+      <h3 style="font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:#6b7280;margin:0 0 12px;">How to Play</h3>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div style="display:flex;gap:12px;align-items:flex-start;">
+          <span style="font-size:18px;min-width:28px;">🕹</span>
+          <p style="margin:0;font-size:14px;color:#d1d5db;line-height:1.6;">Move your player (the cyan circle) through the maze using <strong style="color:#e5e7eb;">arrow keys, W/A/S/D</strong>, or the on-screen D-pad.</p>
+        </div>
+        <div style="display:flex;gap:12px;align-items:flex-start;">
+          <span style="font-size:18px;min-width:28px;">❓</span>
+          <p style="margin:0;font-size:14px;color:#d1d5db;line-height:1.6;">Orange <strong style="color:#fb923c;">? tiles</strong> are question doors. Walk into one to trigger a multiple-choice question. Answer correctly to pass through.</p>
+        </div>
+        <div style="display:flex;gap:12px;align-items:flex-start;">
+          <span style="font-size:18px;min-width:28px;">⏱</span>
+          <p style="margin:0;font-size:14px;color:#d1d5db;line-height:1.6;">You have a limited time to answer. The timer bar turns yellow then red as it runs out. Running out of time counts as a wrong answer.</p>
+        </div>
+        <div style="display:flex;gap:12px;align-items:flex-start;">
+          <span style="font-size:18px;min-width:28px;">🔥</span>
+          <p style="margin:0;font-size:14px;color:#d1d5db;line-height:1.6;">Answer correctly in a row to build a <strong style="color:#f59e0b;">streak</strong>. Your score multiplier grows up to ×5 — wrong answers reset it to zero.</p>
+        </div>
+        <div style="display:flex;gap:12px;align-items:flex-start;">
+          <span style="font-size:18px;min-width:28px;">★</span>
+          <p style="margin:0;font-size:14px;color:#d1d5db;line-height:1.6;">Reach the green <strong style="color:#4ade80;">★ exit</strong> to complete the level. Each new level has more question doors and awards bonus points.</p>
+        </div>
+        <div style="display:flex;gap:12px;align-items:flex-start;">
+          <span style="font-size:18px;min-width:28px;">❤️</span>
+          <p style="margin:0;font-size:14px;color:#d1d5db;line-height:1.6;">You start with <strong style="color:#e5e7eb;">3 lives</strong>. Each wrong answer or timeout costs one. Lose all three and the game ends.</p>
+        </div>
+        <div style="display:flex;gap:12px;align-items:flex-start;">
+          <span style="font-size:18px;min-width:28px;">🗺</span>
+          <p style="margin:0;font-size:14px;color:#d1d5db;line-height:1.6;">Use the <strong style="color:#e5e7eb;">minimap</strong> in the corner to track where you've explored. Unvisited paths stay dark.</p>
+        </div>
+      </div>
+    </div>
+ 
+    <button onclick="document.getElementById('infoModal').style.display='none'" style="margin-top:20px;width:100%;padding:10px;background:#1f2937;border:1px solid #374151;border-radius:8px;color:#9ca3af;font-size:14px;cursor:pointer;">Close</button>
+  </div>
+ 
+</div>
+ 
 <div id="qOverlay">
   <div id="qCard">
     <p id="qCat"></p>
@@ -130,10 +190,10 @@ canvas{display:block;}
     <div id="feedback"></div>
   </div>
 </div>
-
+ 
 <div id="banner"><div id="bannerTxt"></div></div>
 <div id="streakFlash"></div>
-
+ 
 <script>
 const COLS=20,ROWS=16,TILE=30;
 const DIFF={
@@ -141,14 +201,14 @@ const DIFF={
   medium:{time:10,baseDoors:18,doorStep:3},
   hard:  {time:6, baseDoors:22,doorStep:4}
 };
-
+ 
 let difficulty="medium", category="all";
 let maze=[], player={x:1,y:1};
 let score=0, lives=3, streak=0, level=1;
 let highScore=+(localStorage.getItem("bmHS")||0);
 let visited=new Set();
 let qLocked=false, timerID=null, pulseT=0;
-
+ 
 // ── Questions ────────────────────────────────────────────────
 const Q=[
   {q:"A step-by-step set of instructions for solving a problem.",a:["Algorithm","Value","String","Process"],c:0,cat:"debug"},
@@ -182,7 +242,7 @@ const Q=[
 ];
 const CAT_LABEL={data:"Data & Variables",lists:"Lists & Operators",control:"Control Flow",functions:"Functions & Events",debug:"Algorithms & Debugging"};
 function getPool(){ return category==="all"?Q:Q.filter(q=>q.cat===category); }
-
+ 
 // ── Audio ────────────────────────────────────────────────────
 let actx=null;
 function ac(){ if(!actx) actx=new(window.AudioContext||window.webkitAudioContext)(); return actx; }
@@ -207,14 +267,14 @@ const snd={
   streak: ()=>{tone(880,"sine",0.15,0.35);tone(1100,"sine",0.15,0.3,.1);},
   tick:   ()=>tone(700,"square",0.03,0.04)
 };
-
+ 
 // ── Canvas ───────────────────────────────────────────────────
 const cv=document.getElementById("game");
 cv.width=COLS*TILE; cv.height=ROWS*TILE;
 const cx=cv.getContext("2d");
 const mc=document.getElementById("minimap");
 const mx=mc.getContext("2d");
-
+ 
 // ── Maze generation ──────────────────────────────────────────
 function generate(){
   let m=Array.from({length:ROWS},()=>Array(COLS).fill(0));
@@ -241,7 +301,7 @@ function generate(){
   m[exit.y][exit.x]=4;
   return m;
 }
-
+ 
 // ── HUD ─────────────────────────────────────────────────────
 function hud(){
   document.getElementById("scoreEl").textContent=score;
@@ -251,7 +311,7 @@ function hud(){
   let h=""; for(let i=0;i<3;i++) h+=i<lives?"❤️":"🖤";
   document.getElementById("heartsEl").textContent=h;
 }
-
+ 
 // ── Minimap ──────────────────────────────────────────────────
 function drawMinimap(){
   const tw=mc.width/COLS, th=mc.height/ROWS;
@@ -268,7 +328,7 @@ function drawMinimap(){
   mx.fillStyle="#22d3ee";
   mx.fillRect(player.x*(mc.width/COLS),player.y*(mc.height/ROWS),(mc.width/COLS)+1,(mc.height/ROWS)+1);
 }
-
+ 
 // ── Draw ─────────────────────────────────────────────────────
 function draw(){
   cx.clearRect(0,0,cv.width,cv.height);
@@ -312,7 +372,7 @@ function draw(){
   drawMinimap();
   requestAnimationFrame(draw);
 }
-
+ 
 // ── Timer ────────────────────────────────────────────────────
 function startTimer(onDone){
   clearInterval(timerID);
@@ -330,7 +390,7 @@ function startTimer(onDone){
   },100);
 }
 function stopTimer(){ clearInterval(timerID); document.getElementById("timerBar").style.width="0%"; }
-
+ 
 // ── Streak flash ─────────────────────────────────────────────
 let flashTO=null;
 function flashStreak(msg){
@@ -339,7 +399,7 @@ function flashStreak(msg){
   clearTimeout(flashTO);
   flashTO=setTimeout(()=>el.style.opacity="0",900);
 }
-
+ 
 // ── Question ─────────────────────────────────────────────────
 function ask(tx,ty){
   if(qLocked) return;
@@ -362,7 +422,7 @@ function ask(tx,ty){
   });
   startTimer(()=>resolve(null,null,tx,ty,correct));
 }
-
+ 
 function resolve(chosen,btn,tx,ty,correct){
   if(qLocked) return;
   qLocked=true;
@@ -394,9 +454,9 @@ function resolve(chosen,btn,tx,ty,correct){
     },1600);
   }
 }
-
+ 
 function closeQ(){ document.getElementById("qOverlay").style.display="none"; qLocked=false; }
-
+ 
 // ── Movement ─────────────────────────────────────────────────
 function move(dx,dy){
   if(qLocked) return;
@@ -411,7 +471,7 @@ function move(dx,dy){
     setTimeout(()=>{level++;nextLevel();},1300);
   }
 }
-
+ 
 document.addEventListener("keydown",e=>{
   const k=e.key;
   if(k==="ArrowUp"   ||k==="w"||k==="W"){e.preventDefault();move(0,-1);}
@@ -419,7 +479,7 @@ document.addEventListener("keydown",e=>{
   if(k==="ArrowLeft" ||k==="a"||k==="A"){e.preventDefault();move(-1,0);}
   if(k==="ArrowRight"||k==="d"||k==="D"){e.preventDefault();move(1,0);}
 });
-
+ 
 // ── Banner ───────────────────────────────────────────────────
 function showBanner(txt){
   const el=document.getElementById("banner");
@@ -427,10 +487,10 @@ function showBanner(txt){
   el.style.display="flex";
   setTimeout(()=>el.style.display="none",1300);
 }
-
+ 
 // ── High score ───────────────────────────────────────────────
 function saveHS(){ if(score>highScore){highScore=score;localStorage.setItem("bmHS",highScore);} }
-
+ 
 // ── Game flow ────────────────────────────────────────────────
 function nextLevel(){
   maze=generate(); player={x:1,y:1}; visited=new Set(["1,1"]); hud();
@@ -461,7 +521,7 @@ function startGame(){
   document.getElementById("wrap").style.display="flex";
   newGame(); draw();
 }
-
+ 
 document.getElementById("menuHS").textContent=highScore>0?`🏆 Best score: ${highScore}`:"";
 </script>
 </body>
