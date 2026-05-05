@@ -5,198 +5,464 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Weaver's Brain Maze+</title>
 <style>
-body{margin:0;font-family:system-ui;background:#0b1020;color:#e5e7eb;text-align:center}
-#menu{position:fixed;inset:0;display:flex;flex-direction:column;justify-content:center;align-items:center;background:#0b1020;z-index:10}
-#wrap{display:none;justify-content:center;gap:15px;padding:10px}
-canvas{background:#000;border-radius:10px}
-.panel{background:#111827;padding:10px;border-radius:10px;min-width:140px}
-button{padding:10px;margin:5px;border:0;border-radius:8px;cursor:pointer}
-.primary{background:#22c55e;font-weight:bold}
-#questionBox{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.7)}
-#qCard{background:#fff;color:#000;padding:15px;border-radius:10px;width:320px}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+body{margin:0;font-family:system-ui;background:#0b1020;color:#e5e7eb;text-align:center;user-select:none;}
+
+#menu{position:fixed;inset:0;display:flex;flex-direction:column;justify-content:center;align-items:center;background:#0b1020;z-index:10;gap:14px;padding:20px;}
+#menu h1{margin:0 0 4px;font-size:2rem;}
+.section{background:#111827;padding:12px 16px;border-radius:12px;width:100%;max-width:420px;}
+.section-label{font-size:12px;color:#6b7280;margin:0 0 8px;text-transform:uppercase;letter-spacing:.05em;}
+.row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;}
+.chip{padding:8px 18px;border:2px solid #374151;border-radius:8px;cursor:pointer;font-size:14px;background:#1f2937;color:#9ca3af;transition:all .15s;}
+.chip:hover{border-color:#4b5563;color:#e5e7eb;}
+.chip.sel-green{border-color:#22c55e;color:#22c55e;background:#052e16;}
+.chip.sel-blue{border-color:#3b82f6;color:#60a5fa;background:#1e3a5f;}
+#playBtn{padding:12px 40px;font-size:16px;font-weight:bold;border:none;border-radius:10px;background:#22c55e;color:#052e16;cursor:pointer;transition:transform .1s;}
+#playBtn:hover{transform:scale(1.04);}
+#menuHS{font-size:13px;color:#4b5563;}
+
+#wrap{display:none;flex-direction:column;align-items:center;gap:8px;padding:10px;}
+#hud{display:flex;gap:8px;align-items:center;justify-content:center;flex-wrap:wrap;}
+.hud-pill{background:#111827;padding:6px 12px;border-radius:8px;font-size:13px;display:flex;align-items:center;gap:5px;}
+#heartsEl{font-size:18px;letter-spacing:1px;}
+#streakEl{color:#f59e0b;font-weight:bold;}
+#scoreEl{color:#22c55e;font-weight:bold;}
+#levelEl{color:#a78bfa;font-weight:bold;}
+#hsEl{color:#4b5563;}
+
+#gameRow{display:flex;gap:10px;align-items:flex-start;justify-content:center;}
+canvas{display:block;}
+#game{border-radius:10px;background:#000;}
+#minimap{border-radius:6px;border:1px solid #1f2937;}
+
+#dpad{display:grid;grid-template-columns:repeat(3,48px);grid-template-rows:repeat(3,48px);gap:4px;margin:8px auto 4px;}
+#dpad button{background:#111827;border:1px solid #1f2937;border-radius:8px;color:#9ca3af;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;touch-action:manipulation;transition:background .1s;}
+#dpad button:active{background:#1f2937;color:#e5e7eb;}
+#dpad .empty{background:transparent;border:none;pointer-events:none;}
+#menuBtn{background:#1f2937;border:1px solid #374151;color:#9ca3af;padding:6px 18px;border-radius:8px;cursor:pointer;font-size:13px;}
+#menuBtn:hover{color:#e5e7eb;}
+
+#qOverlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.8);z-index:20;}
+#qCard{background:#111827;color:#e5e7eb;padding:22px;border-radius:16px;width:350px;max-width:92vw;border:1px solid #1f2937;}
+#qCat{font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:.06em;margin:0 0 8px;}
+#qText{font-size:15px;line-height:1.6;margin:0 0 12px;}
+#timerWrap{height:6px;border-radius:3px;background:#1f2937;margin-bottom:14px;overflow:hidden;}
+#timerBar{height:100%;border-radius:3px;width:100%;transition:width .1s linear,background .3s;}
+#answerGrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.ans-btn{background:#1f2937;color:#e5e7eb;border:2px solid #374151;border-radius:8px;padding:10px 8px;font-size:13px;cursor:pointer;transition:all .15s;text-align:center;line-height:1.3;}
+.ans-btn:hover{background:#374151;border-color:#4b5563;}
+.ans-btn.correct{background:#052e16;border-color:#22c55e;color:#86efac;}
+.ans-btn.wrong{background:#450a0a;border-color:#ef4444;color:#fca5a5;}
+#feedback{margin-top:12px;font-size:13px;min-height:16px;color:#f59e0b;}
+
+#banner{position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:30;pointer-events:none;}
+#bannerTxt{font-size:3.5rem;font-weight:bold;color:#a78bfa;text-shadow:0 0 30px #7c3aed66;animation:pop .5s ease-out forwards;}
+@keyframes pop{0%{transform:scale(.4);opacity:0}60%{transform:scale(1.1)}100%{transform:scale(1);opacity:1}}
+
+#streakFlash{position:fixed;top:40%;left:50%;transform:translate(-50%,-50%);pointer-events:none;font-size:2rem;font-weight:bold;color:#f59e0b;opacity:0;transition:opacity .25s;z-index:25;}
 </style>
 </head>
 <body>
 
 <div id="menu">
   <h1>🧠 Weaver's Brain Maze+</h1>
-  <button class="primary" onclick="startGame()">Play</button>
+
+  <div class="section">
+    <p class="section-label">Difficulty</p>
+    <div class="row">
+      <button class="chip" onclick="setDiff('easy',this)">🟢 Easy</button>
+      <button class="chip sel-green" onclick="setDiff('medium',this)">🟡 Medium</button>
+      <button class="chip" onclick="setDiff('hard',this)">🔴 Hard</button>
+    </div>
+  </div>
+
+  <div class="section">
+    <p class="section-label">Category</p>
+    <div class="row">
+      <button class="chip sel-blue" onclick="setCat('all',this)">All Topics</button>
+      <button class="chip" onclick="setCat('data',this)">Data &amp; Variables</button>
+      <button class="chip" onclick="setCat('lists',this)">Lists &amp; Operators</button>
+      <button class="chip" onclick="setCat('control',this)">Control Flow</button>
+      <button class="chip" onclick="setCat('functions',this)">Functions &amp; Events</button>
+      <button class="chip" onclick="setCat('debug',this)">Algorithms &amp; Debug</button>
+    </div>
+  </div>
+
+  <button id="playBtn" onclick="startGame()">▶ Play</button>
+  <div id="menuHS"></div>
 </div>
 
 <div id="wrap">
-  <canvas id="game"></canvas>
-  <div class="panel">
-    <div>Score: <b id="score">0</b></div>
-    <div>Lives: <b id="lives">3</b></div>
-    <button onclick="newGame()">Restart</button>
+  <div id="hud">
+    <div class="hud-pill">Lv <span id="levelEl">1</span></div>
+    <div class="hud-pill">Score <span id="scoreEl">0</span></div>
+    <div class="hud-pill" id="heartsEl">❤️❤️❤️</div>
+    <div class="hud-pill">🔥 <span id="streakEl">0×</span></div>
+    <div class="hud-pill">Best <span id="hsEl">0</span></div>
+  </div>
+
+  <div id="gameRow">
+    <canvas id="game"></canvas>
+    <canvas id="minimap" width="100" height="80"></canvas>
+  </div>
+
+  <div id="dpad">
+    <div class="empty"></div>
+    <button ontouchstart="move(0,-1)" onclick="move(0,-1)">▲</button>
+    <div class="empty"></div>
+    <button ontouchstart="move(-1,0)" onclick="move(-1,0)">◀</button>
+    <div class="empty"></div>
+    <button ontouchstart="move(1,0)" onclick="move(1,0)">▶</button>
+    <div class="empty"></div>
+    <button ontouchstart="move(0,1)" onclick="move(0,1)">▼</button>
+    <div class="empty"></div>
+  </div>
+
+  <button id="menuBtn" onclick="goMenu()">← Menu</button>
+</div>
+
+<div id="qOverlay">
+  <div id="qCard">
+    <p id="qCat"></p>
+    <p id="qText"></p>
+    <div id="timerWrap"><div id="timerBar"></div></div>
+    <div id="answerGrid"></div>
+    <div id="feedback"></div>
   </div>
 </div>
 
-<div id="questionBox">
-  <div id="qCard">
-    <p id="qText"></p>
-    <div id="answers"></div>
-  </div>
-</div>
+<div id="banner"><div id="bannerTxt"></div></div>
+<div id="streakFlash"></div>
 
 <script>
-const cols=20, rows=16, tile=30;
-let maze=[], player;
-let score=0, lives=3;
+const COLS=20,ROWS=16,TILE=30;
+const DIFF={
+  easy:  {time:15,baseDoors:10,doorStep:2},
+  medium:{time:10,baseDoors:18,doorStep:3},
+  hard:  {time:6, baseDoors:22,doorStep:4}
+};
 
-const canvas=document.getElementById("game");
-canvas.width=cols*tile;
-canvas.height=rows*tile;
-const ctx=canvas.getContext("2d");
+let difficulty="medium", category="all";
+let maze=[], player={x:1,y:1};
+let score=0, lives=3, streak=0, level=1;
+let highScore=+(localStorage.getItem("bmHS")||0);
+let visited=new Set();
+let qLocked=false, timerID=null, pulseT=0;
 
-// 28 TERMS RESTORED
-const questions=[
-{q:"A step-by-step set of instructions for solving a problem.",a:["Algorithm","Value","String"],c:0},
-{q:"A specific piece of data a program stores or uses.",a:["Value","Variable","Number"],c:0},
-{q:"The category of data a value belongs to.",a:["Data Type","List","Boolean"],c:0},
-{q:"A numeric data type used for math calculations.",a:["Number","String","Boolean"],c:0},
-{q:"A sequence of characters used to represent text.",a:["String","Number","Boolean"],c:0},
-{q:"A data type with only true/false values.",a:["Boolean","Value","Variable"],c:0},
-{q:"A named container that stores a value.",a:["Variable","List","Index"],c:0},
-{q:"The = symbol used for assignment.",a:["Assignment Operator","Comparison Operators","Logical Operators"],c:0},
-{q:"Giving a variable a value.",a:["Variable Assignment","Function Call","Event"],c:0},
-{q:"An ordered collection of values.",a:["List","Element","String"],c:0},
-{q:"A value inside a list.",a:["Element","Index","Variable"],c:0},
-{q:"Position in a list starting at 0.",a:["Index","Number","Element"],c:0},
-{q:"A combination of values and operators.",a:["Expression","Condition","Comment"],c:0},
-{q:"Math symbols for numbers.",a:["Arithmetic Operators","Logical Operators","Comparison Operators"],c:0},
-{q:"Remainder after division.",a:["% (Modulus)","Addition","Multiplication"],c:0},
-{q:"Symbols that compare values.",a:["Comparison Operators","Arithmetic Operators","List"],c:0},
-{q:"Symbols that combine booleans.",a:["Logical Operators","String","Number"],c:0},
-{q:"Joining strings together.",a:["Concatenation","Index","Function"],c:0},
-{q:"True/false control question.",a:["Condition","Variable","String"],c:0},
-{q:"Code that runs based on condition.",a:["Conditional Statement","Loop","Event"],c:0},
-{q:"Updating a value repeatedly.",a:["Counter Pattern","List","Variable Assignment"],c:0},
-{q:"Reusable block of code.",a:["Function","Function Call","Event"],c:0},
-{q:"Command that runs a function.",a:["Function Call","Function","Index"],c:0},
-{q:"An action that triggers code.",a:["Event","Action","Variable"],c:0},
-{q:"Code that waits for an event.",a:["Event Handler","Function","String"],c:0},
-{q:"Program response to an event.",a:["Action","Condition","List"],c:0},
-{q:"A note ignored by program.",a:["Comment","Variable","Number"],c:0},
-{q:"Finding and fixing errors.",a:["Debugging","String","Value"],c:0}
+// ── Questions ────────────────────────────────────────────────
+const Q=[
+  {q:"A step-by-step set of instructions for solving a problem.",a:["Algorithm","Value","String","Process"],c:0,cat:"debug"},
+  {q:"A specific piece of data a program stores or uses.",a:["Value","Variable","Number","Token"],c:0,cat:"data"},
+  {q:"The category that a value belongs to.",a:["Data Type","List","Boolean","Format"],c:0,cat:"data"},
+  {q:"A numeric data type used for math calculations.",a:["Number","String","Boolean","Symbol"],c:0,cat:"data"},
+  {q:"A sequence of characters that represents text.",a:["String","Number","Boolean","Char"],c:0,cat:"data"},
+  {q:"A data type with only two possible values: true or false.",a:["Boolean","Value","Variable","Binary"],c:0,cat:"data"},
+  {q:"A named container that stores a value.",a:["Variable","List","Index","Pointer"],c:0,cat:"data"},
+  {q:"The = symbol used to assign a value.",a:["Assignment Operator","Comparison Op","Logical Op","Equals Sign"],c:0,cat:"data"},
+  {q:"The act of giving a variable a value.",a:["Variable Assignment","Function Call","Event","Declaration"],c:0,cat:"data"},
+  {q:"An ordered collection of values.",a:["List","Element","String","Set"],c:0,cat:"lists"},
+  {q:"A single value stored inside a list.",a:["Element","Index","Variable","Node"],c:0,cat:"lists"},
+  {q:"The position of an item in a list, starting at 0.",a:["Index","Number","Element","Offset"],c:0,cat:"lists"},
+  {q:"A combination of values and operators that produces a result.",a:["Expression","Condition","Comment","Statement"],c:0,cat:"lists"},
+  {q:"Symbols used for math operations like + and *.",a:["Arithmetic Operators","Logical Ops","Comparison Ops","Math Funcs"],c:0,cat:"lists"},
+  {q:"The operator that gives the remainder after division.",a:["% (Modulus)","Addition","Multiplication","Division"],c:0,cat:"lists"},
+  {q:"Symbols that compare two values, e.g. > or ==.",a:["Comparison Operators","Arithmetic Ops","Boolean Ops","Logical Ops"],c:0,cat:"lists"},
+  {q:"Symbols that combine boolean values (AND, OR, NOT).",a:["Logical Operators","String Ops","Arithmetic Ops","Conditionals"],c:0,cat:"lists"},
+  {q:"Joining two or more strings together.",a:["Concatenation","Index","Function","Iteration"],c:0,cat:"lists"},
+  {q:"A true/false question that controls code execution.",a:["Condition","Variable","String","Expression"],c:0,cat:"control"},
+  {q:"Code that only runs when a condition is true.",a:["Conditional Statement","Loop","Event","Function"],c:0,cat:"control"},
+  {q:"Repeatedly updating a variable inside a loop.",a:["Counter Pattern","List","Assignment","Recursion"],c:0,cat:"control"},
+  {q:"A reusable, named block of code.",a:["Function","Function Call","Event","Module"],c:0,cat:"functions"},
+  {q:"The command that triggers a function to run.",a:["Function Call","Function","Index","Invoke"],c:0,cat:"functions"},
+  {q:"An action, like a click or key press, that triggers code.",a:["Event","Action","Variable","Signal"],c:0,cat:"functions"},
+  {q:"Code that listens for and responds to an event.",a:["Event Handler","Function","String","Listener"],c:0,cat:"functions"},
+  {q:"What a program does in response to an event.",a:["Action","Condition","List","Output"],c:0,cat:"functions"},
+  {q:"A note inside code that the program ignores when running.",a:["Comment","Variable","Number","Annotation"],c:0,cat:"debug"},
+  {q:"The process of finding and fixing errors in code.",a:["Debugging","Compiling","Parsing","Testing"],c:0,cat:"debug"}
 ];
+const CAT_LABEL={data:"Data & Variables",lists:"Lists & Operators",control:"Control Flow",functions:"Functions & Events",debug:"Algorithms & Debugging"};
+function getPool(){ return category==="all"?Q:Q.filter(q=>q.cat===category); }
 
+// ── Audio ────────────────────────────────────────────────────
+let actx=null;
+function ac(){ if(!actx) actx=new(window.AudioContext||window.webkitAudioContext)(); return actx; }
+function tone(freq,type,dur,vol=0.25,delay=0){
+  try{
+    const a=ac(),t=a.currentTime+delay;
+    const o=a.createOscillator(),g=a.createGain();
+    o.connect(g);g.connect(a.destination);
+    o.type=type;o.frequency.setValueAtTime(freq,t);
+    g.gain.setValueAtTime(vol,t);
+    g.gain.exponentialRampToValueAtTime(0.001,t+dur);
+    o.start(t);o.stop(t+dur);
+  }catch(e){}
+}
+const snd={
+  move:   ()=>tone(180,"sine",0.04,0.06),
+  door:   ()=>{tone(440,"square",0.06,0.15);tone(330,"square",0.06,0.1,0.06);},
+  correct:()=>{[523,659,784].forEach((f,i)=>tone(f,"sine",0.18,0.25,i*.12));},
+  wrong:  ()=>{tone(220,"sawtooth",0.12,0.3);tone(150,"sawtooth",0.18,0.25,.1);},
+  levelUp:()=>{[523,659,784,1047].forEach((f,i)=>tone(f,"sine",0.22,0.3,i*.1));},
+  over:   ()=>{[400,300,200,120].forEach((f,i)=>tone(f,"sawtooth",0.25,0.3,i*.15));},
+  streak: ()=>{tone(880,"sine",0.15,0.35);tone(1100,"sine",0.15,0.3,.1);},
+  tick:   ()=>tone(700,"square",0.03,0.04)
+};
+
+// ── Canvas ───────────────────────────────────────────────────
+const cv=document.getElementById("game");
+cv.width=COLS*TILE; cv.height=ROWS*TILE;
+const cx=cv.getContext("2d");
+const mc=document.getElementById("minimap");
+const mx=mc.getContext("2d");
+
+// ── Maze generation ──────────────────────────────────────────
 function generate(){
-  let m=Array.from({length:rows},()=>Array(cols).fill(0));
-
+  let m=Array.from({length:ROWS},()=>Array(COLS).fill(0));
   function carve(x,y){
-    let dirs=[[2,0],[-2,0],[0,2],[0,-2]].sort(()=>Math.random()-0.5);
-    for(let [dx,dy] of dirs){
+    [[2,0],[-2,0],[0,2],[0,-2]].sort(()=>Math.random()-.5).forEach(([dx,dy])=>{
       let nx=x+dx,ny=y+dy;
-      if(nx>0&&ny>0&&nx<cols-1&&ny<rows-1&&m[ny][nx]===0){
-        m[ny][nx]=1;
-        m[y+dy/2][x+dx/2]=1;
-        carve(nx,ny);
+      if(nx>0&&ny>0&&nx<COLS-1&&ny<ROWS-1&&m[ny][nx]===0){
+        m[ny][nx]=1;m[y+dy/2][x+dx/2]=1;carve(nx,ny);
       }
-    }
+    });
   }
-
-  m[1][1]=1;
-  carve(1,1);
-
-  // collect path tiles for valid exit placement
-  let candidates=[];
-  for(let y=1;y<rows-1;y++){
-    for(let x=1;x<cols-1;x++){
-      if(m[y][x]===1 && !(x===1&&y===1)){
-        candidates.push({x,y});
-      }
-    }
+  m[1][1]=1; carve(1,1);
+  let cands=[];
+  for(let y=1;y<ROWS-1;y++) for(let x=1;x<COLS-1;x++)
+    if(m[y][x]===1&&!(x===1&&y===1)) cands.push({x,y});
+  const exit=cands[Math.floor(Math.random()*cands.length)]||{x:COLS-2,y:ROWS-2};
+  const cfg=DIFF[difficulty];
+  let count=cfg.baseDoors+(level-1)*cfg.doorStep, placed=0, tries=0;
+  while(placed<count&&tries<2000){
+    tries++;
+    let x=Math.floor(Math.random()*COLS),y=Math.floor(Math.random()*ROWS);
+    if(m[y][x]===1&&!(x===1&&y===1)&&!(x===exit.x&&y===exit.y)){m[y][x]=2;placed++;}
   }
-
-  let pick=candidates[Math.floor(Math.random()*candidates.length)] || {x:cols-2,y:rows-2};
-  let ex=pick.x, ey=pick.y;
-
-  // doors
-  for(let i=0;i<20;i++){
-    let x=Math.floor(Math.random()*cols);
-    let y=Math.floor(Math.random()*rows);
-    if(m[y][x]===1 && !(x===1&&y===1) && !(x===ex&&y===ey)){
-      m[y][x]=2;
-    }
-  }
-
-  // ensure exit is on path
-  m[ey][ex]=1;
-
-  // mark exit
-  m[ey][ex]=4;
-
+  m[exit.y][exit.x]=4;
   return m;
 }
+
+// ── HUD ─────────────────────────────────────────────────────
+function hud(){
+  document.getElementById("scoreEl").textContent=score;
+  document.getElementById("levelEl").textContent=level;
+  document.getElementById("streakEl").textContent=streak+"×";
+  document.getElementById("hsEl").textContent=highScore;
+  let h=""; for(let i=0;i<3;i++) h+=i<lives?"❤️":"🖤";
+  document.getElementById("heartsEl").textContent=h;
 }
 
-function ask(x,y){
-  let q=questions[Math.floor(Math.random()*questions.length)];
-  document.getElementById("questionBox").style.display="flex";
-  document.getElementById("qText").textContent=q.q;
-
-  let ans=document.getElementById("answers");
-  ans.innerHTML="";
-
-  q.a.forEach((a,i)=>{
-    let b=document.createElement("button");
-    b.textContent=a;
-    b.onclick=()=>{
-      if(i===q.c){maze[y][x]=1;player={x,y};score+=10;}
-      document.getElementById("questionBox").style.display="none";
-    };
-    ans.appendChild(b);
-  });
-}
-
-function draw(){
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-
-  for(let y=0;y<rows;y++)for(let x=0;x<cols;x++){
-    let t=maze[y][x];
-    ctx.fillStyle=t===0?"#000":t===4?"green":t===2?"orange":"#444";
-    ctx.fillRect(x*tile,y*tile,tile,tile);
+// ── Minimap ──────────────────────────────────────────────────
+function drawMinimap(){
+  const tw=mc.width/COLS, th=mc.height/ROWS;
+  mx.clearRect(0,0,mc.width,mc.height);
+  for(let y=0;y<ROWS;y++) for(let x=0;x<COLS;x++){
+    const t=maze[y][x], key=x+","+y;
+    if(t===0) mx.fillStyle="#000";
+    else if(!visited.has(key)) mx.fillStyle="#0d1117";
+    else if(t===4) mx.fillStyle="#22c55e";
+    else if(t===2) mx.fillStyle="#f97316";
+    else mx.fillStyle="#334155";
+    mx.fillRect(x*tw,y*th,tw+.5,th+.5);
   }
+  mx.fillStyle="#22d3ee";
+  mx.fillRect(player.x*(mc.width/COLS),player.y*(mc.height/ROWS),(mc.width/COLS)+1,(mc.height/ROWS)+1);
+}
 
-  ctx.fillStyle="cyan";
-  ctx.fillRect(player.x*tile,player.y*tile,tile,tile);
-
+// ── Draw ─────────────────────────────────────────────────────
+function draw(){
+  cx.clearRect(0,0,cv.width,cv.height);
+  const now=Date.now();
+  cx.textAlign="center"; cx.textBaseline="middle";
+  for(let y=0;y<ROWS;y++) for(let x=0;x<COLS;x++){
+    const t=maze[y][x];
+    if(t===0) cx.fillStyle="#050a14";
+    else if(t===4) cx.fillStyle="#14532d";
+    else if(t===2) cx.fillStyle="#7c2d12";
+    else cx.fillStyle="#1e293b";
+    cx.fillRect(x*TILE,y*TILE,TILE,TILE);
+    if(t===2){
+      const p=(Math.sin(now/400+x+y)*.5+.5)*.2;
+      cx.fillStyle=`rgba(251,146,60,${p})`;
+      cx.fillRect(x*TILE,y*TILE,TILE,TILE);
+      cx.fillStyle="#fb923c";
+      cx.font=`${TILE*.52}px system-ui`;
+      cx.fillText("?",x*TILE+TILE/2,y*TILE+TILE/2+1);
+    }
+    if(t===4){
+      const p=(Math.sin(now/350)*.5+.5)*.3;
+      cx.fillStyle=`rgba(134,239,172,${p})`;
+      cx.fillRect(x*TILE,y*TILE,TILE,TILE);
+      cx.fillStyle="#4ade80";
+      cx.font=`${TILE*.55}px system-ui`;
+      cx.fillText("★",x*TILE+TILE/2,y*TILE+TILE/2+1);
+    }
+  }
+  // player
+  pulseT+=0.12;
+  const px=player.x*TILE+TILE/2, py=player.y*TILE+TILE/2;
+  const r=TILE*.38+Math.sin(pulseT)*1.8;
+  cx.fillStyle="rgba(34,211,238,0.18)";
+  cx.beginPath(); cx.arc(px,py,r+5,0,Math.PI*2); cx.fill();
+  cx.fillStyle="#22d3ee";
+  cx.beginPath(); cx.arc(px,py,r,0,Math.PI*2); cx.fill();
+  cx.fillStyle="#0b1020";
+  cx.beginPath(); cx.arc(px-3,py-2,2.5,0,Math.PI*2); cx.fill();
+  cx.beginPath(); cx.arc(px+3,py-2,2.5,0,Math.PI*2); cx.fill();
+  drawMinimap();
   requestAnimationFrame(draw);
 }
 
+// ── Timer ────────────────────────────────────────────────────
+function startTimer(onDone){
+  clearInterval(timerID);
+  const total=DIFF[difficulty].time;
+  let left=total;
+  const bar=document.getElementById("timerBar");
+  bar.style.width="100%"; bar.style.background="#22c55e";
+  timerID=setInterval(()=>{
+    left-=.1;
+    const pct=Math.max(0,left/total)*100;
+    bar.style.width=pct+"%";
+    bar.style.background=pct>50?"#22c55e":pct>25?"#f59e0b":"#ef4444";
+    if(left<=3&&left>0) snd.tick();
+    if(left<=0){clearInterval(timerID);onDone();}
+  },100);
+}
+function stopTimer(){ clearInterval(timerID); document.getElementById("timerBar").style.width="0%"; }
+
+// ── Streak flash ─────────────────────────────────────────────
+let flashTO=null;
+function flashStreak(msg){
+  const el=document.getElementById("streakFlash");
+  el.textContent=msg; el.style.opacity="1";
+  clearTimeout(flashTO);
+  flashTO=setTimeout(()=>el.style.opacity="0",900);
+}
+
+// ── Question ─────────────────────────────────────────────────
+function ask(tx,ty){
+  if(qLocked) return;
+  const pool=getPool();
+  if(!pool.length) return;
+  const q=pool[Math.floor(Math.random()*pool.length)];
+  const correct=q.a[q.c];
+  const answers=[...q.a].sort(()=>Math.random()-.5);
+  document.getElementById("qCat").textContent=CAT_LABEL[q.cat]||"";
+  document.getElementById("qText").textContent=q.q;
+  document.getElementById("feedback").textContent="";
+  document.getElementById("qOverlay").style.display="flex";
+  const grid=document.getElementById("answerGrid");
+  grid.innerHTML=""; qLocked=false;
+  answers.forEach(a=>{
+    const btn=document.createElement("button");
+    btn.className="ans-btn"; btn.textContent=a; btn.dataset.v=a;
+    btn.onclick=()=>resolve(a,btn,tx,ty,correct);
+    grid.appendChild(btn);
+  });
+  startTimer(()=>resolve(null,null,tx,ty,correct));
+}
+
+function resolve(chosen,btn,tx,ty,correct){
+  if(qLocked) return;
+  qLocked=true;
+  stopTimer();
+  const ok=chosen===correct;
+  document.querySelectorAll(".ans-btn").forEach(b=>{
+    if(b.dataset.v===correct) b.className="ans-btn correct";
+    else if(b===btn) b.className="ans-btn wrong";
+  });
+  if(ok){
+    snd.correct();
+    streak++;
+    const mult=Math.min(streak,5);
+    const pts=10*mult;
+    score+=pts;
+    if(streak>=3){snd.streak();flashStreak(`🔥 ${streak}× Streak!`);}
+    document.getElementById("feedback").textContent=
+      streak>1?`✅ Correct! ×${mult} bonus → +${pts} pts`:`✅ Correct! +${pts} pts`;
+    setTimeout(()=>{maze[ty][tx]=1;player={x:tx,y:ty};visited.add(tx+","+ty);hud();closeQ();},900);
+  } else {
+    snd.wrong();
+    streak=0; lives--;
+    const msg=chosen===null?"⏱ Time's up!":"❌ Wrong!";
+    document.getElementById("feedback").textContent=`${msg} Answer: ${correct}`;
+    hud();
+    setTimeout(()=>{
+      closeQ();
+      if(lives<=0){snd.over();saveHS();setTimeout(()=>{alert(`Game Over!\nFinal score: ${score}\nBest: ${highScore}`);goMenu();},400);}
+    },1600);
+  }
+}
+
+function closeQ(){ document.getElementById("qOverlay").style.display="none"; qLocked=false; }
+
+// ── Movement ─────────────────────────────────────────────────
 function move(dx,dy){
-  let nx=player.x+dx,ny=player.y+dy;
-  let t=maze[ny]?.[nx];
+  if(qLocked) return;
+  const nx=player.x+dx, ny=player.y+dy;
+  const t=maze[ny]?.[nx];
   if(t===0||t==null) return;
-
-  if(t===2){ask(nx,ny);return;}
-
-  player={x:nx,y:ny};
-
-  if(t===4){alert("Level Complete!");newGame();}
+  if(t===2){snd.door();ask(nx,ny);return;}
+  player={x:nx,y:ny}; visited.add(nx+","+ny); snd.move();
+  if(t===4){
+    score+=50+(level*10); saveHS(); hud(); snd.levelUp();
+    showBanner("Level "+(level+1)+"!");
+    setTimeout(()=>{level++;nextLevel();},1300);
+  }
 }
 
 document.addEventListener("keydown",e=>{
-  if(e.key=="ArrowUp"||e.key=="w") move(0,-1);
-  if(e.key=="ArrowDown"||e.key=="s") move(0,1);
-  if(e.key=="ArrowLeft"||e.key=="a") move(-1,0);
-  if(e.key=="ArrowRight"||e.key=="d") move(1,0);
+  const k=e.key;
+  if(k==="ArrowUp"   ||k==="w"||k==="W"){e.preventDefault();move(0,-1);}
+  if(k==="ArrowDown" ||k==="s"||k==="S"){e.preventDefault();move(0,1);}
+  if(k==="ArrowLeft" ||k==="a"||k==="A"){e.preventDefault();move(-1,0);}
+  if(k==="ArrowRight"||k==="d"||k==="D"){e.preventDefault();move(1,0);}
 });
 
-function newGame(){
-  maze=generate();
-  player={x:1,y:1};
-  score=0;lives=3;
+// ── Banner ───────────────────────────────────────────────────
+function showBanner(txt){
+  const el=document.getElementById("banner");
+  document.getElementById("bannerTxt").textContent=txt;
+  el.style.display="flex";
+  setTimeout(()=>el.style.display="none",1300);
 }
 
+// ── High score ───────────────────────────────────────────────
+function saveHS(){ if(score>highScore){highScore=score;localStorage.setItem("bmHS",highScore);} }
+
+// ── Game flow ────────────────────────────────────────────────
+function nextLevel(){
+  maze=generate(); player={x:1,y:1}; visited=new Set(["1,1"]); hud();
+}
+function newGame(){
+  level=1;score=0;lives=3;streak=0;
+  maze=generate(); player={x:1,y:1}; visited=new Set(["1,1"]);
+  qLocked=false; hud();
+}
+function setDiff(d,btn){
+  difficulty=d;
+  document.querySelectorAll(".chip").forEach(b=>{if(["🟢 Easy","🟡 Medium","🔴 Hard"].includes(b.textContent))b.classList.remove("sel-green");});
+  btn.classList.add("sel-green");
+}
+function setCat(c,btn){
+  category=c;
+  document.querySelectorAll(".chip").forEach(b=>{if(!["🟢 Easy","🟡 Medium","🔴 Hard"].includes(b.textContent))b.classList.remove("sel-blue");});
+  btn.classList.add("sel-blue");
+}
+function goMenu(){
+  saveHS(); stopTimer(); closeQ();
+  document.getElementById("wrap").style.display="none";
+  document.getElementById("menu").style.display="flex";
+  document.getElementById("menuHS").textContent=highScore>0?`🏆 Best score: ${highScore}`:"";
+}
 function startGame(){
   document.getElementById("menu").style.display="none";
   document.getElementById("wrap").style.display="flex";
-  newGame();
-  draw();
+  newGame(); draw();
 }
-</script>
 
+document.getElementById("menuHS").textContent=highScore>0?`🏆 Best score: ${highScore}`:"";
+</script>
 </body>
 </html>
